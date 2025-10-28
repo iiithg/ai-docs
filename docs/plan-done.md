@@ -112,6 +112,48 @@ Date: 2025-10-28
 
 ## Plan
 
+- PLAN-034 — Storage uploads demo (app 4)
+  - Date: 2025-10-28
+  - Scope: Scaffold `project-burger-shop-storage-uploads-4` from template; add `/profile` page to upload avatar to `avatars` bucket and update `profiles.avatar_url`; include runtime Supabase settings modal.
+  - Outputs: Runnable app under `apps/project-burger-shop-storage-uploads-4/` with `app/profile/page.tsx`, supabase client helpers, Tailwind setup, and updated app README.
+
+## Done
+
+- DONE-034 — Storage uploads demo implemented
+  - Date: 2025-10-28
+  - Result: New app scaffolding with Tailwind and runtime Supabase settings; `/profile` lets authenticated users upload to `avatars/<user_id>/avatar.<ext>`, then updates `profiles.avatar_url`. README documents bucket and policies.
+
+Date: 2025-10-28
+
+## Plan
+
+- PLAN-035 — Open settings by default (app 4)
+  - Date: 2025-10-28
+  - Scope: Add `defaultOpen` prop to Settings and enable it on `/` and `/profile` so the Supabase config dialog shows on entry.
+  - Outputs: Updated `app/components/Settings.tsx`, `app/page.tsx`, and `app/profile/page.tsx`.
+
+## Done
+
+- DONE-035 — Settings opens on entry
+  - Date: 2025-10-28
+  - Result: Visiting the app shows the Settings modal immediately to configure Supabase URL/key.
+
+Date: 2025-10-28
+
+## Plan
+
+- PLAN-036 — Anonymous uploads + SQL script (app 4)
+  - Date: 2025-10-28
+  - Scope: Allow uploads without login using `avatars/guest/<uuid>-avatar.<ext>`; keep logged-in path `<user_id>/avatar.<ext>` with profile update. Add storage policy script to allow anon writes under `guest/` and self-writes for users.
+  - Outputs: Updated upload UI/logic, README policies, and `scripts/storage-avatars.sql`.
+
+## Done
+
+- DONE-036 — Anonymous upload enabled + script added
+  - Date: 2025-10-28
+  - Result: Upload works without login (guest prefix) and still saves to profile when logged in; README updated with anon policy; added `scripts/storage-avatars.sql` with bucket policies.
+
+
 - PLAN-026 — Auth Users: stock + docs sync
   - Date: 2025-10-28
   - Scope: Update app 2 dev doc to reflect admin CRUD + wallet + stock decrement; add `quantity` to `menu_items`; update `buy_burger` RPC to deduct stock and auto-unavailable at 0; wire minimal UI fields.
