@@ -69,6 +69,8 @@ export interface Profile {
   birthday: string | null; // ISO date string
   avatar_url: string | null;
   wallet_cents: number;
+  welcome_claimed?: boolean;
+  welcome_claimed_at?: string | null;
   role?: 'user' | 'admin';
   created_at: string;
   updated_at: string;
@@ -77,6 +79,19 @@ export interface Profile {
 export interface BuyResult {
   order_id: string;
   new_wallet_cents: number;
+}
+
+export interface PurchasedItem {
+  order_id: string;
+  purchased_at: string; // ISO timestamp
+  item_id: string;
+  name: string;
+  description?: string;
+  category: 'burger' | 'side' | 'drink';
+  price_cents: number; // price at purchase time from orders
+  emoji?: string;
+  quantity: number; // current remaining quantity
+  available: boolean; // current availability
 }
 
 // Helper function to format price from cents to dollars

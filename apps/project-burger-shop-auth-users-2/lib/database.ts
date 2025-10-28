@@ -310,6 +310,12 @@ export class ProfilesService {
     if (error) throw error;
     return data as Profile;
   }
+
+  async claimWelcomeBonus(bonusCents = 10000): Promise<{ new_wallet_cents: number; bonus_cents: number }> {
+    const { data, error } = await this.supabase.rpc('claim_welcome_bonus', { p_bonus_cents: bonusCents });
+    if (error) throw error;
+    return data as { new_wallet_cents: number; bonus_cents: number };
+  }
 }
 
 // Orders/Purchase via RPC
@@ -320,6 +326,12 @@ export class OrdersService {
     const { data, error } = await this.supabase.rpc('buy_burger', { p_item_id: itemId });
     if (error) throw error;
     return data as BuyResult;
+  }
+
+  async getMyPurchases(): Promise<import('./types').PurchasedItem[]> {
+    const { data, error } = await this.supabase.rpc('get_my_purchased_items');
+    if (error) throw error;
+    return (data || []) as import('./types').PurchasedItem[];
   }
 }
 

@@ -9,7 +9,7 @@ import {
 } from '@/lib/supabase/dynamic-client';
 import { createDatabaseServices } from '@/lib/database';
 import Settings from '../components/Settings';
-import { formatPrice, type MenuItem } from '@/lib/types';
+import { formatPrice, type MenuItem, type PurchasedItem } from '@/lib/types';
 
 type Profile = {
   id: string;
@@ -17,6 +17,7 @@ type Profile = {
   birthday: string | null; // ISO date
   avatar_url: string | null;
   wallet_cents: number;
+  welcome_claimed?: boolean;
 };
 
 export default function ShopPage() {
@@ -27,9 +28,17 @@ export default function ShopPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [menu, setMenu] = useState<MenuItem[]>([]);
+  const [purchases, setPurchases] = useState<PurchasedItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  function getErrMessage(e: unknown): string {
+    const anyE = e as any;
+    if (anyE?.error?.message) return anyE.error.message;
+    if (anyE?.message) return anyE.message;
+    return 'Failed to load';
+  }
 
   useEffect(() => {
     const stored = getStoredSupabaseSettings();
@@ -52,16 +61,26 @@ export default function ShopPage() {
     (async () => {
       try {
         setLoading(true);
-        const items = await services.menuItems.getAvailable();
-        setMenu(items);
         if (userId) {
-          const p = await services.profiles.getMyProfile();
+          const [items, p] = await Promise.all([
+            services.menuItems.getAvailable(),
+            services.profiles.getMyProfile()
+          ]);
+          setMenu(items);
           setProfile(p);
+          try {
+            const owned = await services.orders.getMyPurchases();
+            setPurchases(owned);
+          } catch (e) {
+            console.warn('getMyPurchases failed', e);
+          }
         } else {
           setProfile(null);
+          setMenu([]);
+          setPurchases([]);
         }
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to load');
+        setError(getErrMessage(e));
       } finally {
         setLoading(false);
       }
@@ -83,8 +102,17 @@ export default function ShopPage() {
       const res = await services.orders.buyBurger(item.id);
       setProfile((p) => (p ? { ...p, wallet_cents: res.new_wallet_cents } : p));
       setMessage(`Purchased: ${item.name} — Paid ${formatPrice(item.price_cents)}`);
+      // Refresh menu and purchases to reflect new stock and history
+      if (userId) {
+        const [items, owned] = await Promise.all([
+          services.menuItems.getAvailable(),
+          services.orders.getMyPurchases()
+        ]);
+        setMenu(items);
+        setPurchases(owned);
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Purchase failed');
+      setError(getErrMessage(e));
     }
   }
 
@@ -128,6 +156,21 @@ export default function ShopPage() {
               <div className="font-semibold">{profile?.full_name || 'User'}</div>
               <div className="text-sm text-neutral-600">Balance: {formatPrice(profile?.wallet_cents ?? 0)}{profile?.birthday ? ` · Birthday: ${new Date(profile.birthday).toLocaleDateString('en-US')}` : ''}</div>
             </div>
+            {!!profile && !profile.welcome_claimed && (
+              <button
+                className="ml-auto rounded bg-green-600 px-3 py-1 text-sm text-white hover:opacity-90"
+                onClick={async ()=>{
+                  try{
+                    setError(null); setMessage(null);
+                    const res = await services!.profiles.claimWelcomeBonus();
+                    setProfile((p)=> p ? { ...p, wallet_cents: res.new_wallet_cents, welcome_claimed: true } : p);
+                    setMessage(`Welcome gift claimed: +${formatPrice(res.bonus_cents)}`);
+                  }catch(e){
+                    setError(e instanceof Error? e.message: 'Failed to claim gift');
+                  }
+                }}
+              >Claim Welcome Gift</button>
+            )}
             <button
               className="ml-auto rounded border px-3 py-1 text-sm"
               onClick={async () => {
@@ -146,6 +189,7 @@ export default function ShopPage() {
         <div className="rounded border border-green-200 bg-green-50 p-3 text-sm text-green-700">{message}</div>
       )}
 
+      {userId && (
       <section className="rounded-lg border bg-white">
         <div className="flex items-center justify-between px-4 py-3 border-b">
           <div className="font-semibold">Available Items</div>
@@ -153,11 +197,22 @@ export default function ShopPage() {
             try {
               setLoading(true);
               setError(null);
-              const items = await services!.menuItems.getAvailable();
-              setMenu(items);
-              if (userId) setProfile(await services!.profiles.getMyProfile());
+              if (userId) {
+                const [items, p] = await Promise.all([
+                  services!.menuItems.getAvailable(),
+                  services!.profiles.getMyProfile()
+                ]);
+                setMenu(items);
+                setProfile(p);
+                try {
+                  const owned = await services!.orders.getMyPurchases();
+                  setPurchases(owned);
+                } catch (e) {
+                  console.warn('getMyPurchases failed', e);
+                }
+              }
             } catch (e) {
-              setError(e instanceof Error? e.message:'Refresh failed');
+              setError(getErrMessage(e));
             } finally { setLoading(false); }
           }}>{loading? 'Refreshing...':'Refresh'}</button>
         </div>
@@ -190,6 +245,35 @@ export default function ShopPage() {
           )}
         </ul>
       </section>
+      )}
+
+      {userId && (
+      <section className="rounded-lg border bg-white">
+        <div className="flex items-center justify-between px-4 py-3 border-b">
+          <div className="font-semibold">My Purchases</div>
+        </div>
+        <ul className="divide-y">
+          {purchases.map((m)=> (
+            <li key={m.order_id} className="px-4 py-3 grid grid-cols-1 md:grid-cols-5 items-center gap-3">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{m.emoji || '🍔'}</span>
+                <div>
+                  <div className="font-medium">{m.name}</div>
+                  {m.description && <div className="text-xs text-neutral-500">{m.description}</div>}
+                </div>
+              </div>
+              <div className="text-sm text-neutral-600">{m.category}</div>
+              <div className="font-semibold">{formatPrice(m.price_cents)}</div>
+              <div className="text-xs text-neutral-500">{new Date(m.purchased_at).toLocaleDateString('en-US')}</div>
+              <div className="text-right text-xs text-neutral-500">Current Qty: {m.quantity}</div>
+            </li>
+          ))}
+          {purchases.length === 0 && (
+            <li className="px-4 py-6 text-center text-sm text-neutral-500">No purchases yet.</li>
+          )}
+        </ul>
+      </section>
+      )}
     </div>
   );
 }

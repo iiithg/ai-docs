@@ -1,76 +1,70 @@
-# project-burger-shop-auth-users-2 — Auth, Profiles, Wallet, Admin, Stock
+# project-burger-shop-auth-users-2 — Auth, Profiles, Wallet, Stock, Admin
 
-应用路径：`apps/project-burger-shop-auth-users-2`
+Path: `apps/project-burger-shop-auth-users-2`
 
-## 目标功能
-- 登录后：
-  - 管理员（super admin = `role='admin'`）可在 `/admin` 管理商品（新增/编辑/删除/上下架）。
-  - 普通用户拥有初始钱包余额，可在 `/shop` 购买商品。
-- 购买后商品库存 `quantity` 减 1；当库存到 0 自动下架（`available=false`），不可购买。
- - 每个新用户仅一次“新手大礼包”领取机会；数据库以 `profiles.welcome_claimed` 记录是否已领取；领取通过安全 RPC 完成并在 RLS 下生效。
+## Overview
+- Sign in to view and buy items.
+- Profiles store name, birthday, avatar URL, wallet balance, and whether the welcome gift was claimed.
+- A one-time welcome gift can be claimed per user via an RPC.
+- Purchases are atomic: deduct stock and wallet, insert an order, and auto-unlist items at zero stock.
+- Admins manage the menu in `/admin` with an email allowlist plus role guard.
 
-## 主要页面
-- `/auth` 登录/注册（Supabase Auth）
-- `/shop` 商店（登录后可买；展示个人资料和余额）
-- `/admin` 管理界面（仅 `role='admin'` 访问）
+## Pages
+- `/auth` — sign in / register (Supabase Auth)
+- `/shop` — shop page (requires login to see items), claim gift, buy items, and view “My Purchases”
+- `/admin` — admin UI (only for `role='admin'` and allowlisted emails)
 
-## 环境变量
-- `.env.local`（或在界面右上角“⚙️”动态设置并存储到 localStorage）
+## Environment
+- Use `.env.local` or the in‑app “⚙️” dialog (stored in localStorage):
   - `NEXT_PUBLIC_SUPABASE_URL`
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-## 启动
+## Start
 ```bash
 cd apps/project-burger-shop-auth-users-2
 npm install
 npm run dev
 ```
 
-## 数据库与脚本（scripts/）
-- `init.sql`（生产最小集，一次性执行）：
-  - 扩展：`pgcrypto`、`citext`
-  - 表：
-    - `public.menu_items`（含 `quantity integer not null default 0 check (quantity >= 0)`）
-    - `public.profiles`（含 `wallet_cents`、`welcome_claimed boolean default false`、`role text check ... default 'user'`）
+## Database and Scripts (scripts/)
+- Single entry: `init.sql` (run once)
+  - Extensions: `pgcrypto`, `citext`
+  - Tables:
+    - `public.menu_items` (includes `quantity integer not null default 0 check (quantity >= 0)`)
+    - `public.profiles` (includes `wallet_cents`, `welcome_claimed boolean default false`, and `role` with `user|admin`)
     - `public.orders`
-  - 触发器：`handle_new_user()` 在注册后生成 profile 并分配随机初始余额
-  - RPC：
-    - `buy_burger(p_item_id uuid)` — 原子扣款 + 扣减库存；当库存为 0 自动将 `available=false`
-    - `claim_welcome_bonus(p_bonus_cents integer default 10000)` — 每用户仅一次，给钱包充值（默认 ¥100.00），并将 `welcome_claimed=true`
-  - RLS：
-    - `menu_items`：公共只读；管理员可写（基于 `profiles.role='admin'`）
-    - `profiles`：本人可读/更改资料（不涉及角色）；
-    - `orders`：本人可读；插入经由 RPC 完成
-  - 种子：示例菜单，带初始 `quantity`
-- `init-dev.sql`（开发便捷脚本）：
-  - `\i init.sql` 后关闭 `menu_items` 的 RLS 便于调试（`profiles`/`orders` 保持受保护）
-  - 注意：`\i` 是 psql 元命令，需使用 psql 或 Supabase CLI 执行；SQL Editor 可能不支持。
+  - Trigger: `handle_new_user()` — creates a profile at signup (wallet=0) and promotes default allowlisted email to admin
+  - RPCs:
+    - `buy_burger(p_item_id uuid)` — atomic wallet deduction + stock decrement; auto `available=false` at zero
+    - `claim_welcome_bonus(p_bonus_cents integer default 10000)` — one-time per user, credits wallet and sets `welcome_claimed=true`
+    - `get_my_purchased_items()` — returns the caller’s order history joined with current menu data
+  - RLS:
+    - `menu_items`: select allowed only to authenticated users; write allowed only for admins (`profiles.role='admin'`)
+    - `profiles`: self read; restricted self update (role/wallet/welcome fields locked); admins may update any profile
+    - `orders`: self read; inserts happen via RPC only
+  - Seeds: 16+ sample items across burgers/sides/drinks with initial stock
+  - Backfill: create missing `profiles` rows for existing `auth.users`
 
-执行方式示例
+Run options
 ```bash
-# 使用 psql（推荐）
+# psql (recommended)
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/init.sql
-# 或开发模式：
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/init-dev.sql
+# Supabase SQL Editor
+# Open this file locally, copy all contents, and paste + run
 ```
 
-## 购买与礼包流程（事务语义）
-1) 校验登录与商品存在/可售；
-2) 扣减库存：`update menu_items set quantity = quantity - 1 where id = $1 and quantity > 0 returning quantity`；
-   - 若返回为空或变为负数，则报错并回滚（并发安全）。
-3) 若新库存为 0，自动将 `available=false`；
-4) 从用户 `profiles.wallet_cents` 扣除价格（不足则报错回滚）；
-5) 写入 `orders` 并返回 `{ order_id, new_wallet_cents }`。
+## Purchase and Gift Flows (transactional)
+1) Validate auth and availability.
+2) Decrement `quantity` with a guarded `update ... where quantity > 0 returning quantity` (prevents oversell).
+3) Auto-unlist when new quantity hits 0 (`available=false`).
+4) Deduct `wallet_cents` (fails and rolls back on insufficient funds).
+5) Insert into `orders` and return `{ order_id, new_wallet_cents }`.
 
-礼包：
-- 登录后用户在 `/shop` 点击“领取新手大礼包”；UI 调用 `claim_welcome_bonus()`。
-- 若 `profiles.welcome_claimed=false`，数据库在单次事务中将其置为 true 并为 `wallet_cents` 增加奖励金额；否则抛出“Already claimed”。
+Gift
+- On `/shop`, click “Claim Welcome Gift”. UI calls `claim_welcome_bonus()`.
+- If `welcome_claimed=false`, it sets it to true and credits the wallet in a single transaction; otherwise it raises “Already claimed”.
 
-## 前端行为
-- `/shop` 仅展示“可售且库存>0”的商品，购买成功后刷新余额与列表。
-- `/admin` 可编辑 `quantity` 与 `available`，支持新增、编辑、删除与上下架。
-- `/shop` 个人卡片显示余额与“领取新手大礼包”按钮（仅当未领取时显示）。
-
-## 测试建议
-- 注册两个账号，使用 “管理员账号”设置为 `role='admin'`（在 SQL 控制台更新 `profiles.role`）。
-- 管理员在 `/admin` 新增几条商品并设置 `quantity`；普通用户在 `/shop` 重复购买直至售罄，观察商品自动下架。
+## Frontend Behavior
+- `/shop`: shows available items (login required, stock>0). After buy, it auto-refreshes stock and “My Purchases”.
+- `/admin`: create/edit/delete/toggle availability and edit `quantity` (admins only).
+- The profile card shows wallet balance and a “Claim Welcome Gift” button if not yet claimed.

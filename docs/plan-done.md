@@ -117,6 +117,26 @@ Date: 2025-10-28
   - Scope: Update app 2 dev doc to reflect admin CRUD + wallet + stock decrement; add `quantity` to `menu_items`; update `buy_burger` RPC to deduct stock and auto-unavailable at 0; wire minimal UI fields.
   - Outputs: Updated `docs/project-burger-shop-auth-users-2.md`; patched SQL in `apps/project-burger-shop-auth-users-2/scripts/init.sql` and `init-dev.sql`; UI shows/edits quantity in `/admin` and hides out-of-stock in `/shop`.
 
+- PLAN-029 — Scripts README: init guides
+  - Date: 2025-10-28
+  - Scope: Document how to run SQL init in scripts/README (psql vs SQL Editor), include dev mode note and upgrade snippet, reflect welcome gift and stock.
+  - Outputs: Updated `apps/project-burger-shop-auth-users-2/scripts/README.md`.
+
+- PLAN-031 — Hide menu for guests + RLS
+  - Date: 2025-10-28
+  - Scope: Change `menu_items` select policy to `authenticated` only; update shop page to skip fetching and hide the list when logged out; refresh docs.
+  - Outputs: Updated `init.sql`, shop UI, and docs.
+
+- PLAN-032 — Resilient purchases fetch + errors
+  - Date: 2025-10-28
+  - Scope: Make `get_my_purchased_items` non-fatal if missing; improve error messages; auto-refresh menu+purchases after buy.
+  - Outputs: Updated shop page fetch/refresh and error handling.
+
+- PLAN-033 — Refresh app README + docs
+  - Date: 2025-10-28
+  - Scope: Update app README to match latest behavior (auth-only menu, gift, purchases, admin gating, single init.sql, troubleshooting); ensure docs mention these features.
+  - Outputs: Updated `apps/project-burger-shop-auth-users-2/README.md` and `docs/project-burger-shop-auth-users-2.md`.
+
 ## Done
 
 - DONE-026 — Stock + docs implemented for app 2
@@ -260,3 +280,48 @@ Date: 2025-10-28
 - DONE-023 — Realtime Chat demo implemented
   - Date: 2025-10-28
   - Result: App scaffolded with `/chat` page (messages + presence cursors), inline login/signup, SQL scripts (`init-chat.sql`, table + policies), updated README and landing page.
+Date: 2025-10-28
+
+## Plan
+
+- PLAN-028 — Admin gating by email + auto-role
+  - Date: 2025-10-28
+  - Scope: Gate `/admin` by email allowlist (env `NEXT_PUBLIC_ADMIN_EMAILS`, default `physicoada@gmail.com`); modify signup trigger to auto set `role='admin'` when email matches; update docs.
+  - Outputs: Updated admin page gating and trigger in `scripts/init.sql`; docs mention default email and env override.
+
+## Done
+
+- DONE-028 — Admin email gating enabled
+  - Date: 2025-10-28
+  - Result: Only allowlisted emails can see `/admin`; default `physicoada@gmail.com`. Signup trigger assigns admin role to matching email. Docs updated.
+
+- DONE-029 — Scripts README updated
+  - Date: 2025-10-28
+  - Result: Clear instructions for running `init.sql`/`init-dev.sql` with psql and SQL Editor; upgrade snippet included; notes about allowlisted admin and welcome gift.
+
+Date: 2025-10-28
+
+## Plan
+
+- PLAN-030 — Remove dev init and tighten RLS
+  - Date: 2025-10-28
+  - Scope: Delete `init-dev.sql`; update scripts README and app docs to single `init.sql`; harden `profiles` RLS to prevent self-editing `role/wallet/welcome_*`.
+  - Outputs: Only `init.sql` remains; README/docs updated; policies adjusted in `init.sql`.
+
+## Done
+
+- DONE-030 — Dev script removed; RLS hardened
+  - Date: 2025-10-28
+  - Result: `init-dev.sql` deleted; README/docs show one init path; `profiles self update` now restricted (role/wallet/welcome fields immutable by user), admin policy added.
+
+- DONE-031 — Menu hidden for guests; RLS updated
+  - Date: 2025-10-28
+  - Result: `menu_items` select now `to authenticated`; shop page hides Available Items when logged out and avoids unauthorized fetches.
+
+- DONE-032 — Purchases fetch hardened; better errors
+  - Date: 2025-10-28
+  - Result: Purchases RPC failure no longer breaks the page; clearer API error messages; post-buy auto-refresh of lists.
+
+- DONE-033 — App README + docs refreshed
+  - Date: 2025-10-28
+  - Result: README reflects login-only visibility, welcome gift, stock decrement, purchases list, admin email gating and role, single init.sql, and troubleshooting tips.

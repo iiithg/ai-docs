@@ -1,49 +1,39 @@
-# project-burger-shop-auth-users-2
+# project-burger-shop-auth-users-2 — Auth, Profiles, Wallet, Stock, Admin
 
-Auth + Users demo on top of the burger shop — requires login to buy burgers, stores user profile (name, birthday, avatar) and a per-user wallet with randomized initial balance.
+Auth + Users demo for the burger shop. Requires login to view items and buy. Stores user profile (name, birthday, avatar) and a per‑user wallet. Supports a one‑time welcome gift, per‑item stock with auto‑unlist at 0, and an admin page with email allowlist + role guard.
 
 ## Features
 
 - Supabase Auth (email/password): register, login, logout
-- Profiles table: `full_name`, `birthday`, `avatar_url`, `wallet_cents`
-- Random initial wallet per user (set by trigger on signup)
-- Guarded purchase flow: only logged-in users can buy
-- Atomic purchase RPC `buy_burger` updates wallet and writes `orders`
-- Reuses existing `menu_items` from CRUD demo; shows available items only
+- Profiles table: `full_name`, `birthday`, `avatar_url`, `wallet_cents`, `welcome_claimed`
+- One‑time welcome gift via RPC `claim_welcome_bonus` (default ¥100.00)
+- Guarded purchase flow (visible and purchasable only when logged in)
+- Stocked menu: `menu_items.quantity` decrements per purchase; auto‑unlists at 0
+- Atomic purchase RPC `buy_burger`: decrement stock + deduct wallet + insert `orders`
+- “My Purchases” list (RPC `get_my_purchased_items`)
+- Admin page `/admin`: email allowlist (default `physicoada@gmail.com`, override with `NEXT_PUBLIC_ADMIN_EMAILS`) + role `profiles.role='admin'`; only admins can write `menu_items`
 
 ## Setup
 
 - Copy `.env.example` → `.env.local` and set:
   - `NEXT_PUBLIC_SUPABASE_URL`
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- Or click the in-app ⚙️ to set URL/Key at runtime (stored in localStorage)
+- Or click the in‑app ⚙️ to set URL/Key at runtime (stored in localStorage)
 
 ## Database (SQL)
 
-Run in Supabase SQL Editor:
+Run exactly one file: `apps/project-burger-shop-auth-users-2/scripts/init.sql` (copy all into Supabase SQL Editor, or run via psql).
 
-Option A — one shot
-- Open `scripts/init-auth.sql`, copy all, run once.
+What `init.sql` includes
+- Extensions, tables (`menu_items` with `quantity`, `profiles` with `welcome_claimed`, `orders`), RLS policies
+- Triggers: `handle_new_user()` (wallet starts at 0; default allowlisted email becomes admin)
+- RPCs: `buy_burger`, `claim_welcome_bonus`, `get_my_purchased_items`
+- Seed: 16+ menu items across burgers/sides/drinks with initial stock
+- Backfill: auto‑create `profiles` for existing `auth.users`
 
-Option B — step-by-step
-- `000-extensions.sql`
-- `010-table_menu_items.sql`
-- `011-table_promo_codes.sql`
-- `020-table_profiles.sql`
-- `022-alter_profiles_add_role.sql`（profiles 增加 role 字段，默认 'user'）
-- `021-table_orders.sql`
-- `030-rls_dev_off.sql` (dev only; re-enable RLS for prod)
-- `031-rls_on_min_policies.sql` (prod: 开启最小可用 RLS 策略)
-- `040-seed_menu_items.sql`
-- `041-seed_promo_codes.sql`
-- `060-rpc_buy_burger.sql`
-- `070-trigger_on_signup.sql`
-- `080-seed_auth_users.sql`（可选：直接在数据库中批量创建测试用户）
-- `085-grant_admin.sql`（可选：把某个邮箱的用户设为管理员 role='admin'）
-
-Notes
-- Trigger `handle_new_user` copies `full_name/birthday/avatar_url` from `raw_user_meta_data` at signup and assigns a random starting `wallet_cents`.
-- RPC `buy_burger(p_item_id uuid)` checks availability, ensures sufficient funds, deducts wallet, inserts an order, and returns `{ order_id, new_wallet_cents }`.
+Important
+- Menu is readable only to authenticated users; guests won’t see the list.
+- Menu writes are protected by RLS; the UI also enforces an email allowlist (default `physicoada@gmail.com`, override via comma‑separated `NEXT_PUBLIC_ADMIN_EMAILS`).
 
 ## Run
 
@@ -54,35 +44,37 @@ npm run dev
 ```
 
 Open `http://localhost:3001` (or your dev port):
-- Go to `/auth` to register or login
-- After login, go to `/` to buy items; header shows your balance and birthday
-- Admin can visit `/admin` 进入“菜单管理”界面；非管理员会看到“权限不足”的提示。
+- `/auth` — register or login
+- `/shop` — after login: view items (available && stock > 0), claim welcome gift, buy items (auto‑refreshes stock and purchases)
+- `/admin` — menu CRUD for admins; non‑admins see access denied
 
 ## Files
 
-- `app/page.tsx` — Shop UI (requires auth to buy)
-- `app/auth/page.tsx` — Register/Login form, pushes user metadata
-- `lib/database.ts` — Services: `menuItems`, `profiles`, `orders`
-- `lib/types.ts` — Types incl. `Profile` and `BuyResult`
-- `scripts/*.sql` — Tables, RPC, trigger, seeds
+- `app/shop/page.tsx` — Shop UI (login required; claim gift; buy; shows My Purchases)
+- `app/auth/*` — Auth pages
+- `app/admin/page.tsx` — Admin UI (email allowlist + role guard; stock support)
+- `lib/database.ts` — `menuItems` / `profiles` / `orders` (includes `getMyPurchases`)
+- `lib/types.ts` — Types: `MenuItem` / `Profile` / `BuyResult` / `PurchasedItem`
+- `scripts/init.sql` — Initialization (extensions / tables / RLS / RPCs / trigger / seeds / backfill)
 
 ## Security
 
-- Dev scripts disable RLS for speed; for production, enable RLS and restrict RPCs.
+- RLS enabled on sensitive tables; `menu_items` readable only to authenticated users; admin writes only.
 - Never expose service role keys in the client; use only the anon key on the web.
 
-## 测试用户（数据库直建）
+## Troubleshooting
 
-- 运行 `scripts/080-seed_auth_users.sql` 将直接插入 2 个测试账号：
-  - `alice@example.com` / `Passw0rd!`
-  - `bob@example.com` / `Passw0rd!`
-- 插入到 `auth.users` 时会触发 `handle_new_user`，自动在 `public.profiles` 生成资料，并分配随机 `wallet_cents`。
-- 登录界面 `/auth` 使用 Supabase Auth API 实际写入/验证用户，无需服务端。
+- Can’t see “Claim Welcome Gift” or see “Failed to load”: most likely missing `profiles` row or wrong project. Run `scripts/init.sql` on the exact project your app connects to (⚙️). The script includes a backfill for existing users.
+- “function not found (get_my_purchased_items)”: run the RPC section from `init.sql`, then `select pg_notify('pgrst','reload schema');`.
+- Seed says `quantity does not exist`: older table is missing the column. `init.sql` includes `alter table ... add column if not exists quantity ...`; run that then re‑seed.
 
-## RLS 说明
+## Test users (optional)
 
-- `profiles` 与 `orders` 默认开启 RLS：
-  - profiles：仅本人可读写（姓名/生日/头像）；
-  - orders：仅本人可读；购买通过 `buy_burger`（SECURITY DEFINER）在数据库侧扣款与写单。
-- `menu_items`、`promo_codes` 在开发脚本中默认关闭 RLS（便于调试），如需生产隔离，可执行 `031-rls_on_min_policies.sql` 开启只读策略。
-- 同时在 `031-rls_on_min_policies.sql` 中已加入“管理员写策略”，只有 `profiles.role='admin'` 的用户可对菜单/优惠券进行 insert/update/delete。
+- If you have a seeding flow for `auth.users`, `handle_new_user` will create matching `profiles` with wallet=0.
+
+## RLS
+
+- `profiles` and `orders` have RLS enabled by default.
+  - profiles: self read; restricted self update (name/birthday/avatar only); admins can update any profile.
+  - orders: self read; inserts via `buy_burger` RPC only.
+- `menu_items`: authenticated read; admin‑only writes.

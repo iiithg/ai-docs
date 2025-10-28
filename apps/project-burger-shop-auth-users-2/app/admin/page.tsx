@@ -25,6 +25,7 @@ export default function AdminPage() {
   const services = useMemo(() => (supabaseClient ? createDatabaseServices(supabaseClient) : null), [supabaseClient]);
 
   const [userId, setUserId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,9 +46,13 @@ export default function AdminPage() {
   // auth + profile
   useEffect(() => {
     if (!supabaseClient) return;
-    supabaseClient.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+    supabaseClient.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id ?? null);
+      setUserEmail(data.user?.email ?? null);
+    });
     const { data: sub } = supabaseClient.auth.onAuthStateChange((_evt: any, session: any) => {
       setUserId(session?.user?.id ?? null);
+      setUserEmail(session?.user?.email ?? null);
     });
     return () => sub?.subscription?.unsubscribe();
   }, [supabaseClient]);
@@ -79,6 +84,13 @@ export default function AdminPage() {
     saveSupabaseSettings(url, key);
     setSupabaseClient(createDynamicSupabaseClient(url, key));
   };
+
+  // Admin access control: by email allowlist AND DB role
+  const allowedAdminEmails = useMemo(() => {
+    const raw = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || 'physicoada@gmail.com') as string;
+    return raw.split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+  }, []);
+  const emailAllowed = (userEmail ? allowedAdminEmails.includes(userEmail.toLowerCase()) : false);
 
   // CRUD handlers
   async function createItem(e: React.FormEvent) {
@@ -156,11 +168,11 @@ export default function AdminPage() {
     );
   }
 
-  if (profile && profile.role !== 'admin') {
+  if ((profile && profile.role !== 'admin') || !emailAllowed) {
     return (
       <div className="rounded border border-red-200 bg-red-50 p-6">
         <div className="font-semibold text-red-700 mb-2">Insufficient permissions</div>
-        <div className="text-sm text-red-700">Only super admins can access the admin area. Contact your administrator if needed.</div>
+        <div className="text-sm text-red-700">Only approved admin emails can access the admin area. Contact your administrator if needed.</div>
       </div>
     );
   }
