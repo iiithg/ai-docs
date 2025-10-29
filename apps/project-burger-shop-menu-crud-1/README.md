@@ -70,31 +70,22 @@ npm run dev
 
 ## Database Setup
 
-### 🚀 一次性初始化（推荐方式）
+### 🚀 One-time Initialization (Recommended)
 
-**最简单的方法：使用一次性初始化脚本**
+The simplest approach is to run the single initialization script.
 
-1. **登录 Supabase Dashboard**
-   - 访问 [https://supabase.com/dashboard](https://supabase.com/dashboard)
-   - 选择你的项目
+1. Open the Supabase Dashboard and select your project
+2. Go to SQL Editor → New query
+3. Copy the entire contents of `scripts/init-all.sql`
+4. Paste into the SQL Editor and click Run
 
-2. **打开 SQL Editor**
-   - 点击左侧导航栏的 "SQL Editor"
+After success, verify in Table Editor that you have:
+- `menu_items` with 17 sample items
+- `promo_codes` with 10 sample codes
 
-3. **执行初始化脚本**
-   - 点击 "New query" 创建新查询
-   - 复制 `scripts/init-all.sql` 文件的全部内容
-   - 粘贴到 SQL Editor 中
-   - 点击 "Run" 按钮执行
+### 📋 Step-by-step (Optional)
 
-4. **验证结果**
-   - 执行成功后，在 "Table Editor" 中应该看到：
-     - `menu_items` 表（17个示例菜单项）
-     - `promo_codes` 表（10个示例优惠码）
-
-### 📋 分步执行（可选方式）
-
-如果你想分步执行，可以按顺序运行 `scripts/` 文件夹中的脚本：
+If you prefer to apply scripts individually, run these in order in the SQL Editor:
 - `000-extensions.sql` → `010-table_menu_items.sql` → `011-table_promo_codes.sql` → `030-rls_dev_off.sql` → `040-seed_menu_items.sql` → `041-seed_promo_codes.sql`
 
 ### 🗄️ Database Tables

@@ -1,26 +1,60 @@
-# project-burger-shop-edge-function-5
+# project-burger-shop-edge-function-5 — Weather Edge Function
 
-Single‑file demo calling a Supabase Edge Function and a Postgres RPC.
+Edge Function demo that proxies Open‑Meteo and returns current weather. Frontend calls `/functions/v1/weather?lat=..&lon=..` directly, no custom server needed.
 
-## Start From Template
-- Copy `apps/burger-template` or reuse its structure.
-- Ensure `.env.local` has `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+App path: `apps/project-burger-shop-edge-function-5`
 
-## Run
-- `npm install`
-- `npm run dev`
-- Add a button in `app/demo/page.tsx` to `fetch('/functions/v1/daily_sales_summary')` and display JSON.
-
-## RPC Example (apply in SQL editor)
-```sql
-create or replace function public.compute_order_total(order_id uuid)
-returns int language sql stable security invoker as $$
-  select coalesce(sum(price_cents),0) from public.menu_items mi
-  join public.order_items oi on oi.item_id = mi.id
-  where oi.order_id = compute_order_total.order_id;
-$$;
+## Run the App
+```bash
+cd apps/project-burger-shop-edge-function-5
+npm install
+npm run dev
 ```
 
-## Next Steps
-- Add Edge Function (via Supabase CLI) to compute daily sales; show result in the UI.
+Environment
+- Optional (only for authenticated calls or other features):
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  - Otherwise, the weather function works without auth.
+
+Routes
+- `/weather` — enter lat/lon and fetch via Edge Function
+
+## Edge Function: `weather`
+
+Source example included at `apps/project-burger-shop-edge-function-5/supabase/functions/weather/index.ts`:
+```ts
+import { serve } from 'https://deno.land/std/http/server.ts'
+
+serve(async (req) => {
+  const url = new URL(req.url)
+  const lat = url.searchParams.get('lat')
+  const lon = url.searchParams.get('lon')
+  if (!lat || !lon) return new Response(JSON.stringify({ error: 'missing lat/lon' }), { status: 400, headers: { 'content-type': 'application/json' } })
+
+  const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`)
+  const data = await r.json()
+  return new Response(JSON.stringify({ current: data.current_weather }), {
+    headers: {
+      'content-type': 'application/json',
+      'cache-control': 'public, max-age=300',
+      'access-control-allow-origin': '*'
+    }
+  })
+})
+```
+
+Deploy via Supabase CLI
+```bash
+# from your project root (with supabase CLI installed)
+supabase functions deploy weather
+supabase functions list
+
+# local serve (optional)
+supabase functions serve weather --env-file supabase/.env
+```
+
+## RPC vs Edge Function
+- Use Postgres RPC for pure in‑DB logic with RLS.
+- Use Edge Functions to call external APIs, use secrets, do multi‑step logic, or add caching.
 

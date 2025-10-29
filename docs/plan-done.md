@@ -153,6 +153,37 @@ Date: 2025-10-28
   - Date: 2025-10-28
   - Result: Upload works without login (guest prefix) and still saves to profile when logged in; README updated with anon policy; added `scripts/storage-avatars.sql` with bucket policies.
 
+Date: 2025-10-29
+
+## Plan
+
+- PLAN-037 — Build Edge Function demo (app 5)
+  - Date: 2025-10-29
+  - Scope: Scaffold Next.js app for weather proxy edge function; add `/weather` page that fetches `/functions/v1/weather?lat=..&lon=..`; include Settings modal; provide function source under `supabase/functions/weather/index.ts` and README deploy steps.
+  - Outputs: Runnable app in `apps/project-burger-shop-edge-function-5` with UI, settings, example function code, and updated README.
+
+## Done
+
+- DONE-037 — Edge Function weather demo implemented
+  - Date: 2025-10-29
+  - Result: App scaffolded with `/weather` page calling `/functions/v1/weather`; Settings modal added; function source provided under `supabase/functions/weather/index.ts`; README includes CLI deploy steps.
+
+
+Date: 2025-10-29
+
+## Plan
+
+- PLAN-038 — Normalize app READMEs to English
+  - Date: 2025-10-29
+  - Scope: Audit all app READMEs; rewrite any non‑English sections; ensure consistent Quick Start, Environment, Routes, and Database Setup. Fix mixed-language parts in CRUD app (1) and verify Storage Uploads (4) is fully English.
+  - Outputs: Updated READMEs with English-only content; consistent sections and wording.
+
+## Done
+
+- DONE-038 — All app READMEs English; CRUD README fixed
+  - Date: 2025-10-29
+  - Result: Rewrote Database Setup section in `apps/project-burger-shop-menu-crud-1/README.md` to English; confirmed `apps/project-burger-shop-storage-uploads-4/README.md` and other app READMEs are already English and complete.
+
 
 - PLAN-026 — Auth Users: stock + docs sync
   - Date: 2025-10-28

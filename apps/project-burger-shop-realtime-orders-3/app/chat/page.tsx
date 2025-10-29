@@ -115,13 +115,29 @@ export default function ChatPage() {
     
     const sub = supabase
       .channel('chat_messages_channel')
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'chat_messages' 
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'chat_messages'
       }, (payload: any) => {
         console.log('New message received:', payload.new);
-        setMessages((m) => [...m, payload.new as Message]);
+        const newMessage = payload.new as Message;
+
+        // Only add the message if it's not already in the list
+        // This prevents duplicate messages when using optimistic updates
+        setMessages((prevMessages) => {
+          const exists = prevMessages.some(msg =>
+            msg.id === newMessage.id ||
+            (msg.username === newMessage.username &&
+             msg.content === newMessage.content &&
+             Math.abs(new Date(msg.created_at).getTime() - new Date(newMessage.created_at).getTime()) < 1000)
+          );
+
+          if (!exists) {
+            return [...prevMessages, newMessage];
+          }
+          return prevMessages;
+        });
       })
       .subscribe((status: string) => {
         console.log('Chat subscription status:', status);
@@ -268,34 +284,58 @@ export default function ChatPage() {
 
   const send = async () => {
     if (!newMessage.trim() || !supabase || !anonymousUser) {
-      console.log('Send blocked:', { 
-        hasMessage: !!newMessage.trim(), 
-        hasSupabase: !!supabase, 
-        hasUser: !!anonymousUser 
+      console.log('Send blocked:', {
+        hasMessage: !!newMessage.trim(),
+        hasSupabase: !!supabase,
+        hasUser: !!anonymousUser
       });
       return;
     }
-    
+
+    const content = newMessage.trim();
+    const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const tempMessage: Message = {
+      id: tempId,
+      username: anonymousUser.name,
+      content,
+      created_at: new Date().toISOString()
+    };
+
+    // Optimistically add message to UI immediately
+    setMessages(prev => [...prev, tempMessage]);
+    setNewMessage('');
+
     const messageData = {
       username: anonymousUser.name,
-      content: newMessage.trim(),
+      content,
       room: 'lobby'
     };
-    
+
     console.log('Attempting to send message:', messageData);
-    
+
     try {
       const { data, error } = await supabase.from('chat_messages').insert(messageData).select();
-      
+
       if (error) {
         console.error('Error sending message:', error);
+        // Remove the optimistic message and show error
+        setMessages(prev => prev.filter(msg => msg.id !== tempId));
+        setNewMessage(content); // Restore the message content
         alert(`发送消息失败: ${error.message}`);
       } else {
         console.log('Message sent successfully:', data);
-        setNewMessage('');
+        // Replace temporary message with real one from database
+        if (data && data.length > 0) {
+          setMessages(prev => prev.map(msg =>
+            msg.id === tempId ? data[0] : msg
+          ));
+        }
       }
     } catch (error) {
       console.error('Failed to send message:', error);
+      // Remove the optimistic message and show error
+      setMessages(prev => prev.filter(msg => msg.id !== tempId));
+      setNewMessage(content); // Restore the message content
       alert(`发送消息异常: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   };
