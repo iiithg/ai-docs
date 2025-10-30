@@ -1,21 +1,18 @@
 -- ============================================================================
--- 汉堡店管理系统 - 一次性初始化脚本
 -- Burger Shop Management System - One-time Initialization Script
 -- ============================================================================
--- 
--- 这个脚本包含了所有必要的数据库初始化操作：
--- This script contains all necessary database initialization operations:
--- 1. 启用扩展 (Enable extensions)
--- 2. 创建表结构 (Create table structures)  
--- 3. 禁用开发环境RLS (Disable RLS for development)
--- 4. 插入种子数据 (Insert seed data)
 --
--- 使用方法：在 Supabase SQL Editor 中复制粘贴并执行此脚本
+-- This script contains all necessary database initialization operations:
+-- 1. Enable extensions
+-- 2. Create table structures
+-- 3. Disable RLS for development
+-- 4. Insert seed data
+--
 -- Usage: Copy and paste this script in Supabase SQL Editor and execute
 -- ============================================================================
 
 -- ============================================================================
--- 1. 启用必要的扩展 (Enable Required Extensions)
+-- 1. Enable Required Extensions
 -- ============================================================================
 
 -- Enable UUID generation
@@ -25,7 +22,7 @@ create extension if not exists pgcrypto;
 create extension if not exists citext;
 
 -- ============================================================================
--- 2. 创建菜单项表 (Create Menu Items Table)
+-- 2. Create Menu Items Table
 -- ============================================================================
 
 create table if not exists public.menu_items (
@@ -67,7 +64,7 @@ create trigger update_menu_items_updated_at
   execute function update_updated_at_column();
 
 -- ============================================================================
--- 3. 创建优惠码表 (Create Promo Codes Table)
+-- 3. Create Promo Codes Table
 -- ============================================================================
 
 create table if not exists public.promo_codes (
@@ -98,7 +95,7 @@ create trigger update_promo_codes_updated_at
   execute function update_updated_at_column();
 
 -- ============================================================================
--- 4. 禁用开发环境RLS (Disable RLS for Development)
+-- 4. Disable RLS for Development
 -- ============================================================================
 -- WARNING: This allows unrestricted access to all data
 -- Only use this during development and testing
@@ -110,7 +107,7 @@ alter table public.menu_items disable row level security;
 alter table public.promo_codes disable row level security;
 
 -- ============================================================================
--- 5. 插入菜单项种子数据 (Insert Menu Items Seed Data)
+-- 5. Insert Menu Items Seed Data
 -- ============================================================================
 
 insert into public.menu_items (name, description, category, price_cents, available, emoji)
@@ -140,7 +137,7 @@ values
 on conflict do nothing;
 
 -- ============================================================================
--- 6. 插入优惠码种子数据 (Insert Promo Codes Seed Data)
+-- 6. Insert Promo Codes Seed Data
 -- ============================================================================
 
 insert into public.promo_codes (code, description, discount_type, discount_value, is_active)
@@ -165,21 +162,17 @@ values
 on conflict do nothing;
 
 -- ============================================================================
--- 初始化完成！(Initialization Complete!)
+-- Initialization Complete!
 -- ============================================================================
--- 
--- 🎉 数据库初始化成功！现在你可以：
+--
 -- 🎉 Database initialization successful! Now you can:
 --
--- 1. 在你的应用中配置 Supabase 环境变量
---    Configure Supabase environment variables in your app
--- 2. 启动开发服务器：npm run dev
---    Start development server: npm run dev
--- 3. 访问 http://localhost:3001 查看汉堡店管理系统
---    Visit http://localhost:3001 to see the burger shop management system
+-- 1. Configure Supabase environment variables in your app
+-- 2. Start development server: npm run dev
+-- 3. Visit http://localhost:3001 to see the burger shop management system
 --
--- 表结构概览 (Table Overview):
--- • menu_items: 17 个示例菜单项 (17 sample menu items)
--- • promo_codes: 10 个示例优惠码 (10 sample promo codes)
+-- Table Overview:
+-- • menu_items: 17 sample menu items
+-- • promo_codes: 10 sample promo codes
 --
 -- ============================================================================

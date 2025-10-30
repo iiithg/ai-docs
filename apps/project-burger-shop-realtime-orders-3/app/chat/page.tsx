@@ -407,7 +407,7 @@ export default function ChatPage() {
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
             <p className="text-sm font-medium text-gray-700 mb-2">📝 SQL Scripts to Run:</p>
             <div className="text-xs bg-gray-800 text-green-400 p-3 rounded font-mono overflow-x-auto">
-              <div>-- 创建聊天消息表</div>
+              <div>-- Create chat messages table</div>
               <div>CREATE TABLE chat_messages (</div>
               <div>&nbsp;&nbsp;id uuid DEFAULT gen_random_uuid() PRIMARY KEY,</div>
               <div>&nbsp;&nbsp;user_id text NOT NULL,</div>
