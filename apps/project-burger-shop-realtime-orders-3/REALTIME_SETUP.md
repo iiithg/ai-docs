@@ -1,124 +1,125 @@
-# 🚀 实时聊天功能设置指南
+# 🚀 Real-time Chat Feature Setup Guide
 
-## 🚨 常见错误快速修复
+## 🚨 Quick Fix for Common Errors
 
-### ❌ "Could not find the 'username' column" 错误
+### ❌ "Could not find the 'username' column" Error
 
-**问题**: 发送消息时出现找不到 `username` 列的错误
-**原因**: 数据库表结构与代码不匹配
+**Problem**: Error finding `username` column when sending messages
+**Cause**: Database table structure doesn't match the code
 
-**解决方案**:
-1. 在 Supabase SQL 编辑器中运行：
+**Solution**:
+1. Run in Supabase SQL Editor:
 ```sql
--- 复制粘贴 scripts/fix-table-structure.sql 的内容
+-- Copy and paste contents from scripts/fix-table-structure.sql
 ```
-2. 在 **Database > Replication** 中重新启用 `chat_messages` 表的实时复制
-3. 刷新页面重试
+2. Re-enable real-time replication for `chat_messages` table in **Database > Replication**
+3. Refresh page and try again
 
-## 📋 问题诊断
+## 📋 Problem Diagnosis
 
-如果你遇到以下问题：
-- ✅ 能看到多个在线用户
-- ❌ 看不到其他用户的鼠标位置
-- ❌ 发送消息失败
+If you encounter the following issues:
 
-## 🔧 解决步骤
+- ✅ Can see multiple online users
+- ❌ Cannot see other users' mouse positions
+- ❌ Message sending fails
 
-### 1. 数据库设置
+## 🔧 Solution Steps
 
-首先在 Supabase SQL 编辑器中运行：
+### 1. Database Setup
+
+First, run in Supabase SQL Editor:
 
 ```sql
--- 运行完整的初始化脚本
+-- Run complete initialization script
 \i scripts/init-chat.sql
 ```
 
-或者直接复制粘贴 `scripts/init-chat.sql` 的内容到 SQL 编辑器中执行。
+Or directly copy and paste the contents of `scripts/init-chat.sql` into the SQL Editor and execute.
 
-### 2. 启用实时功能
+### 2. Enable Real-time Features
 
-在 Supabase 控制台中：
+In Supabase Console:
 
-1. **进入 Database > Replication**
-2. **找到 `chat_messages` 表**
-3. **点击右侧的开关启用实时复制**
+1. **Go to Database > Replication**
+2. **Find `chat_messages` table**
+3. **Click the toggle on the right to enable real-time replication**
 
-### 3. 检查 RLS 策略
+### 3. Check RLS Policies
 
-确保以下策略已创建：
+Ensure the following policies are created:
 
 ```sql
--- 检查策略是否存在
+-- Check if policies exist
 SELECT * FROM pg_policies WHERE tablename = 'chat_messages';
 ```
 
-应该看到两个策略：
+You should see two policies:
 - `chat read auth`
 - `chat write auth`
 
-### 4. 环境变量配置
+### 4. Environment Variable Configuration
 
-在 `.env.local` 文件中设置正确的 Supabase 配置：
+Set correct Supabase configuration in `.env.local` file:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-actual-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-actual-anon-key
 ```
 
-**重要**：确保 URL 不是占位符 `https://your-project-ref.supabase.co`
+**Important**: Ensure URL is not placeholder `https://your-project-ref.supabase.co`
 
-### 5. 重启开发服务器
+### 5. Restart Development Server
 
-修改环境变量后，重启 Next.js 开发服务器：
+After modifying environment variables, restart Next.js development server:
 
 ```bash
 npm run dev
 ```
 
-## 🐛 调试技巧
+## 🐛 Debugging Tips
 
-### 检查浏览器控制台
+### Check Browser Console
 
-打开浏览器开发者工具，查看控制台输出：
+Open browser developer tools and check console output:
 
-- `Presence subscription status: SUBSCRIBED` - 表示在线状态订阅成功
-- `Chat subscription status: SUBSCRIBED` - 表示聊天消息订阅成功
-- `Sending cursor update:` - 表示鼠标位置正在发送
-- `Cursor update:` - 表示接收到其他用户的鼠标位置
+- `Presence subscription status: SUBSCRIBED` - Online status subscription successful
+- `Chat subscription status: SUBSCRIBED` - Chat messages subscription successful
+- `Sending cursor update:` - Mouse position is being sent
+- `Cursor update:` - Receiving other users' mouse positions
 
-### 常见错误
+### Common Errors
 
-1. **`Invalid JWT`** - 检查 ANON_KEY 是否正确
-2. **`relation "chat_messages" does not exist`** - 运行数据库初始化脚本
-3. **`permission denied`** - 检查 RLS 策略是否正确设置
+1. **`Invalid JWT`** - Check if ANON_KEY is correct
+2. **`relation "chat_messages" does not exist`** - Run database initialization script
+3. **`permission denied`** - Check if RLS policies are correctly set
 
-### 测试步骤
+### Testing Steps
 
-1. 打开两个不同的浏览器窗口（或无痕模式）
-2. 访问 `/chat` 页面
-3. 在两个窗口中都应该看到对方在线
-4. 移动鼠标应该能看到对方的鼠标位置
-5. 发送消息应该在两个窗口中都能看到
+1. Open two different browser windows (or incognito mode)
+2. Visit `/chat` page
+3. Both windows should see each other online
+4. Moving mouse should show other user's mouse position
+5. Sending messages should be visible in both windows
 
-## 📊 功能验证清单
+## 📊 Feature Verification Checklist
 
-- [ ] 数据库表 `chat_messages` 已创建
-- [ ] RLS 策略已设置
-- [ ] 实时复制已启用
-- [ ] 环境变量配置正确
-- [ ] 开发服务器已重启
-- [ ] 浏览器控制台无错误
-- [ ] 多窗口测试成功
+- [ ] Database table `chat_messages` created
+- [ ] RLS policies set up
+- [ ] Real-time replication enabled
+- [ ] Environment variables configured correctly
+- [ ] Development server restarted
+- [ ] No errors in browser console
+- [ ] Multi-window testing successful
 
-## 🆘 仍然有问题？
+## 🆘 Still Having Issues?
 
-如果按照以上步骤仍然无法解决问题，请检查：
+If you still can't solve the problem following the above steps, please check:
 
-1. Supabase 项目是否在免费计划限制内
-2. 网络连接是否稳定
-3. 浏览器是否支持 WebSocket
-4. 是否有防火墙或代理阻止连接
+1. If Supabase project is within free plan limits
+2. If network connection is stable
+3. If browser supports WebSocket
+4. If firewall or proxy is blocking connections
 
-## 🔄 重置配置
+## 🔄 Reset Configuration
 
-如果需要重新配置 Supabase 连接，点击聊天页面左侧的 "Reconfigure Supabase" 按钮。
+If you need to reconfigure Supabase connection, click the "Reconfigure Supabase" button on the left side of the chat page.

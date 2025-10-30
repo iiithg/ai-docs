@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: "Next.js + Supabase starter in a burger-shop style"
 };
 
-// 模拟用户数据
+// Mock user data
 const mockUserInfo = {
   name: "John Smith",
   balance: 2500, // $25.00

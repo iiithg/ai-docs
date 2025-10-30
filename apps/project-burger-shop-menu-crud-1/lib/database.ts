@@ -190,11 +190,11 @@ export class PromoCodesService {
     const promoCode = await this.getByCode(code);
     
     if (!promoCode) {
-      return { valid: false, error: '优惠码不存在' };
+      return { valid: false, error: 'Promo code does not exist' };
     }
 
     if (!promoCode.is_active) {
-      return { valid: false, error: '优惠码已禁用' };
+      return { valid: false, error: 'Promo code is disabled' };
     }
 
     const now = new Date();
@@ -202,22 +202,22 @@ export class PromoCodesService {
     const validUntil = promoCode.valid_until ? new Date(promoCode.valid_until) : null;
 
     if (now < validFrom) {
-      return { valid: false, error: '优惠码尚未生效' };
+      return { valid: false, error: 'Promo code is not yet active' };
     }
 
     if (validUntil && now > validUntil) {
-      return { valid: false, error: '优惠码已过期' };
+      return { valid: false, error: 'Promo code has expired' };
     }
 
     if (orderAmountCents < promoCode.min_order_cents) {
-      return { 
-        valid: false, 
-        error: `订单金额需满¥${(promoCode.min_order_cents / 100).toFixed(2)}` 
+      return {
+        valid: false,
+        error: `Order must be at least ¥${(promoCode.min_order_cents / 100).toFixed(2)}`
       };
     }
 
     if (promoCode.usage_limit && promoCode.used_count >= promoCode.usage_limit) {
-      return { valid: false, error: '优惠码使用次数已达上限' };
+      return { valid: false, error: 'Promo code usage limit reached' };
     }
 
     return { valid: true, promoCode };
