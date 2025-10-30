@@ -1,41 +1,34 @@
-# Burger Template — Base Frontend
+# Burger Template — Base UI + Local Shop
 
-This template provides a minimal Next.js + Supabase setup in a burger shop style (header, hero, menu grid). Other apps copy this as a starting point and then add database-backed interactions.
+Path: `apps/burger-template`
 
-## Purpose
-- Speed up scaffolding and keep UI/UX consistent across demos.
-- Centralize Supabase client creation, layout shell, and basic utilities.
-- Demonstrate “database as state management” where UI state persists in Postgres.
+A Next.js App Router template with a playful burger-shop UI. It includes a fully local “shop simulator” (no backend required): menu, inventory, cart, wallet, combo discount, coupon-only deals, tax, receipts, and inline Dev Tools. Feature apps copy this template and add Supabase-backed behavior.
 
-## Stack
-- Next.js (App Router) + TypeScript
-- Styling: Tailwind (or minimal CSS modules)
-- Supabase client: `@supabase/supabase-js`
+## What’s Included
+- Local shop flow: add items, compute totals, pay from a local wallet
+- Inventory tracking in local state (with restock/reset dev actions)
+- Deals: $1 off per Burger+Side+Drink combo and an optional `BURGER10` coupon
+- Tax calculation (8%) and recent receipts list
+- Inline Dev Tools: restock, reset wallet, clear local save, env status
 
-## Environment
-- `.env.local` with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-- Optional: `NEXT_PUBLIC_STORAGE_BUCKET`, `NEXT_PUBLIC_EDGE_FN_URL` used by feature apps.
+## Supabase Integration (optional)
+- The template runs UI-only. To wire Supabase for experiments, set env and use the client helper:
+  - Env (optional): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  - Client helper: `lib/supabase/client.ts` → `maybeCreateBrowserClient()` returns `null` when env is absent
 
-## Suggested Structure
-- `apps/burger-template/`
-  - `app/layout.tsx` — Layout shell (header/nav/footer)
-  - `app/page.tsx` — Landing page (hero + sample menu grid)
-  - `app/(feature)/demo/page.tsx` — Slot page for feature demos
-  - `lib/supabase/client.ts` — Configured Supabase browser client
-  - `lib/supabase/server.ts` — Server helpers (optional)
-  - `components/*` — Button, Input, Card, Table, Modal
-  - `styles/globals.css` — Tailwind or minimal CSS
-  - `next.config.js`, `postcss.config.js`, `tailwind.config.js`, `tsconfig.json`
+## Tech Stack
+- Next.js (App Router) + TypeScript + Tailwind CSS
+
+## Structure
+- `app/layout.tsx` — Header/nav and themed layout
+- `app/page.tsx` — Local shop (menu, cart, deals, checkout, dev tools)
+- `lib/supabase/client.ts` — Optional browser client factory
+- `styles/globals.css` — Global styles
 
 ## Conventions
-- Keep state local and simple; avoid heavy client state libraries.
-- Prefer DB-backed state for canonical data; use optimistic UI when helpful.
-- Use typed helpers for Supabase responses where practical.
-
-## Database as State (pattern)
-- UI source of truth lives in Postgres; components read/write through Supabase.
-- For small demos, write directly from components; for larger ones, wrap writes in small helpers (or RPC) to keep UI clean.
+- Keep components small and pure; prefer colocation.
+- For demos that need persistence or multi-user behavior, lift state into Postgres (via Supabase CRUD/RPC) and keep UI logic thin.
 
 ## Usage
-- Copy `apps/burger-template` as the starting point for each demo.
-- Add feature-specific UI under `app/(feature)/...` and wire to Supabase.
+- Use this as the base for all single‑feature demos and combined apps.
+- Replace local state with DB calls where appropriate; keep the UX and styling consistent.

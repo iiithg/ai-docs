@@ -42,16 +42,10 @@ CREATE TABLE chat_messages (
 
 **Note**: Updated structure uses `username` column instead of `user_id` for simplified anonymous access.
 
-### Row Level Security (RLS)
+### Access Model (demo)
+For this demo we keep it simple: RLS is disabled on `chat_messages`, and `anon` is granted `SELECT` and `INSERT`. Enable RLS and add policies if you need tighter control.
 ```sql
--- Enable RLS
-ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
-
--- Allow anonymous access for demo purposes
-CREATE POLICY "chat read public" ON chat_messages FOR SELECT USING (true);
-CREATE POLICY "chat write public" ON chat_messages FOR INSERT WITH CHECK (true);
-
--- Grant permissions
+ALTER TABLE chat_messages DISABLE ROW LEVEL SECURITY;
 GRANT USAGE ON SCHEMA public TO anon;
 GRANT SELECT, INSERT ON chat_messages TO anon;
 ```
@@ -165,11 +159,9 @@ http://localhost:8080/chat
 2. **Enable Realtime**: Database → Replication → Enable for `chat_messages`
 3. **Configure Application**: Use UI to connect to Supabase
 
-### SQL Script Options
-- `init-chat-complete.sql` - Fresh installation
-- `reset-chat-tables.sql` - Complete reset (recommended)
-- `fix-table-structure.sql` - Fix column issues
-- `cleanup-old-tables.sql` - Remove old tables
+### SQL Script Options (scripts/)
+- `init.sql` — Fresh installation (idempotent)
+- `reset.sql` — Complete reset and recreate (use for troubleshooting)
 
 ## 🔍 Real-time Features Deep Dive
 
