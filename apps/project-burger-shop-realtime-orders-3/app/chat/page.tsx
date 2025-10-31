@@ -241,7 +241,7 @@ export default function ChatPage() {
 
   const testConnection = async () => {
     if (!configForm.url || !configForm.anonKey) {
-      setConnectionError('请填写 Supabase URL 和 Anon Key');
+      setConnectionError('Please fill in Supabase URL and Anon Key');
       return;
     }
 
@@ -255,7 +255,7 @@ export default function ChatPage() {
       const { error } = await testClient.from('chat_messages').select('count').limit(1);
       
       if (error) {
-        throw new Error(`连接测试失败: ${error.message}`);
+        throw new Error(`Connection test failed: ${error.message}`);
       }
 
       // Save configuration
@@ -264,7 +264,7 @@ export default function ChatPage() {
       setSupabaseConfig(config);
       
     } catch (error: any) {
-      setConnectionError(error.message || '连接失败，请检查配置');
+      setConnectionError(error.message || 'Connection failed, please check configuration');
     } finally {
       setIsConnecting(false);
     }
@@ -321,7 +321,7 @@ export default function ChatPage() {
         // Remove the optimistic message and show error
         setMessages(prev => prev.filter(msg => msg.id !== tempId));
         setNewMessage(content); // Restore the message content
-        alert(`发送消息失败: ${error.message}`);
+        alert(`Failed to send message: ${error.message}`);
       } else {
         console.log('Message sent successfully:', data);
         // Replace temporary message with real one from database
@@ -336,7 +336,7 @@ export default function ChatPage() {
       // Remove the optimistic message and show error
       setMessages(prev => prev.filter(msg => msg.id !== tempId));
       setNewMessage(content); // Restore the message content
-      alert(`发送消息异常: ${error instanceof Error ? error.message : '未知错误'}`);
+      alert(`Error sending message: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -347,16 +347,16 @@ export default function ChatPage() {
         <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-lg">
           <div className="text-center mb-6">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">🍔 Burger Chat</h1>
-            <p className="text-gray-600">实时聊天 + 鼠标跟踪演示</p>
+            <p className="text-gray-600">Real-time Chat + Mouse Tracking Demo</p>
           </div>
           
           <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h3 className="font-semibold text-blue-900 mb-2">📋 设置步骤：</h3>
+            <h3 className="font-semibold text-blue-900 mb-2">📋 Setup Steps:</h3>
             <ol className="text-sm text-blue-800 space-y-1">
-              <li>1. 登录 <a href="https://supabase.com" target="_blank" className="underline">Supabase</a> 并创建项目</li>
-              <li>2. 在 Settings → API 获取配置信息</li>
-              <li>3. 在 SQL 编辑器运行数据库脚本</li>
-              <li>4. 启用 Database → Replication</li>
+              <li>1. Login to <a href="https://supabase.com" target="_blank" className="underline">Supabase</a> and create project</li>
+              <li>2. Get configuration from Settings → API</li>
+              <li>3. Run database scripts in SQL editor</li>
+              <li>4. Enable Database → Replication</li>
             </ol>
           </div>
           
@@ -372,7 +372,7 @@ export default function ChatPage() {
                 placeholder="https://xyzcompany.supabase.co"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
-              <p className="text-xs text-gray-500 mt-1">从 Settings → API → Project URL 复制</p>
+              <p className="text-xs text-gray-500 mt-1">Copy from Settings → API → Project URL</p>
             </div>
             
             <div>
@@ -386,12 +386,12 @@ export default function ChatPage() {
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
-              <p className="text-xs text-gray-500 mt-1">从 Settings → API → anon public 复制</p>
+              <p className="text-xs text-gray-500 mt-1">Copy from Settings → API → anon public</p>
             </div>
             
             {connectionError && (
               <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md border border-red-200">
-                <strong>连接失败：</strong>{connectionError}
+                <strong>Connection Failed:</strong>{connectionError}
               </div>
             )}
             
@@ -400,14 +400,14 @@ export default function ChatPage() {
               disabled={isConnecting || !configForm.url.trim() || !configForm.anonKey.trim()}
               className="w-full bg-orange-500 text-white py-3 px-4 rounded-md hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
-              {isConnecting ? '连接中...' : '🚀 连接并开始聊天'}
+              {isConnecting ? 'Connecting...' : '🚀 Connect and Start Chatting'}
             </button>
           </div>
           
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm font-medium text-gray-700 mb-2">📝 需要运行的 SQL 脚本：</p>
+            <p className="text-sm font-medium text-gray-700 mb-2">📝 SQL Scripts to Run:</p>
             <div className="text-xs bg-gray-800 text-green-400 p-3 rounded font-mono overflow-x-auto">
-              <div>-- 创建聊天消息表</div>
+              <div>-- Create chat messages table</div>
               <div>CREATE TABLE chat_messages (</div>
               <div>&nbsp;&nbsp;id uuid DEFAULT gen_random_uuid() PRIMARY KEY,</div>
               <div>&nbsp;&nbsp;user_id text NOT NULL,</div>
@@ -416,11 +416,11 @@ export default function ChatPage() {
               <div>&nbsp;&nbsp;room text DEFAULT 'lobby',</div>
               <div>&nbsp;&nbsp;created_at timestamptz DEFAULT now()</div>
               <div>);</div>
-              <div className="mt-2">-- 启用 RLS 和策略</div>
+              <div className="mt-2">-- Enable RLS and policies</div>
               <div>ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;</div>
             </div>
             <p className="text-xs text-gray-600 mt-2">
-              💡 完整脚本在 <code>scripts/init-chat.sql</code> 文件中
+              💡 Complete scripts in <code>scripts/init-chat.sql</code> file
             </p>
           </div>
         </div>
