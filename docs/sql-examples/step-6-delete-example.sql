@@ -1,0 +1,11 @@
+-- Step 6: DELETE example
+-- Example: Delete cancelled orders older than 30 days to clean up old data
+DELETE FROM orders WHERE status = 'cancelled' AND placed_at < now() - interval '30 days';
+-- Expected Output:
+-- Before (filtered for affected rows):
+-- | id | status    | placed_at           |
+-- |  3 | cancelled | 2025-09-15 ...     |  <-- will be deleted
+--
+-- After:
+-- No such rows remain. SELECT * FROM orders WHERE status = 'cancelled' AND placed_at < now()-interval '30 days' yields zero rows.
+-- Other rows in orders table are unaffected.

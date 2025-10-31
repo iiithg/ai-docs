@@ -1,0 +1,11 @@
+-- Step 5: UPDATE example
+-- Example: Mark order with id=1 as paid and update its status
+UPDATE orders SET status = 'paid', is_paid = true WHERE id = 1;
+-- Expected Output:
+-- Before (row with id=1):
+-- | id | status  | is_paid |
+-- | 1  | pending |  false  |
+-- After (row with id=1):
+-- | id | status | is_paid |
+-- | 1  | paid   |  true   |
+-- All other rows remain unchanged.
