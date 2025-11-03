@@ -6,16 +6,20 @@ export default function Settings({ defaultOpen }: { defaultOpen?: boolean }) {
   const [url, setUrl] = useState('');
   const [key, setKey] = useState('');
   const [showKey, setShowKey] = useState(false);
+  const [token, setToken] = useState('');
+  const [showToken, setShowToken] = useState(false);
 
   useEffect(() => {
     const u = localStorage.getItem('supabase_url') || '';
     const k = localStorage.getItem('supabase_anon_key') || '';
-    setUrl(u); setKey(k);
+    const t = localStorage.getItem('supabase_access_token') || '';
+    setUrl(u); setKey(k); setToken(t);
   }, []);
 
   function save() {
     localStorage.setItem('supabase_url', url);
     localStorage.setItem('supabase_anon_key', key);
+    if (token) localStorage.setItem('supabase_access_token', token); else localStorage.removeItem('supabase_access_token');
     setIsOpen(false);
   }
 
@@ -43,6 +47,14 @@ export default function Settings({ defaultOpen }: { defaultOpen?: boolean }) {
                   <button type="button" onClick={()=>setShowKey(!showKey)} className="absolute inset-y-0 right-0 pr-3 text-xs text-neutral-500">{showKey? 'Hide':'Show'}</button>
                 </div>
               </div>
+              <div>
+                <label className="block text-sm mb-1">Access Token (Authorization: Bearer ...)</label>
+                <div className="relative">
+                  <input type={showToken? 'text':'password'} value={token} onChange={e=>setToken(e.target.value)} className="w-full rounded border px-3 py-2 pr-10" placeholder="Paste user JWT if endpoint requires verify_jwt" />
+                  <button type="button" onClick={()=>setShowToken(!showToken)} className="absolute inset-y-0 right-0 pr-3 text-xs text-neutral-500">{showToken? 'Hide':'Show'}</button>
+                </div>
+                <p className="text-xs text-neutral-500 mt-1">部分函数启用了 JWT 校验（verify_jwt）。填写此字段以附带 <code>Authorization</code> 头。</p>
+              </div>
               <p className="text-xs text-neutral-500">Edge Function can be public; settings are optional unless you add auth.</p>
             </div>
             <div className="flex justify-end gap-2 mt-6">
@@ -55,4 +67,3 @@ export default function Settings({ defaultOpen }: { defaultOpen?: boolean }) {
     </>
   );
 }
-
