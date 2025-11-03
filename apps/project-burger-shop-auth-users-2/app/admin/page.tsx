@@ -85,12 +85,7 @@ export default function AdminPage() {
     setSupabaseClient(createDynamicSupabaseClient(url, key));
   };
 
-  // Admin access control: by email allowlist AND DB role
-  const allowedAdminEmails = useMemo(() => {
-    const raw = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || 'physicoada@gmail.com') as string;
-    return raw.split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
-  }, []);
-  const emailAllowed = (userEmail ? allowedAdminEmails.includes(userEmail.toLowerCase()) : false);
+  // Admin access control: by DB role only
 
   // CRUD handlers
   async function createItem(e: React.FormEvent) {
@@ -171,11 +166,11 @@ export default function AdminPage() {
     );
   }
 
-  if ((profile && profile.role !== 'admin') || !emailAllowed) {
+  if (profile && profile.role !== 'admin') {
     return (
       <div className="rounded border border-red-200 bg-red-50 p-6">
         <div className="font-semibold text-red-700 mb-2">Insufficient permissions</div>
-        <div className="text-sm text-red-700">Only approved admin emails can access the admin area. Contact your administrator if needed.</div>
+        <div className="text-sm text-red-700">Only users with admin role can access the admin area. Contact your administrator if needed.</div>
       </div>
     );
   }
