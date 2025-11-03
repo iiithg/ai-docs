@@ -31,3 +31,18 @@ Date: 2025-10-29
 - DONE-040 — Supabase tutorial added
   - Date: 2025-10-29
   - Result: Created `docs/supabase-tutorial-1-2.md` with end-to-end steps, SQL samples, acceptance checklists, and troubleshooting.
+
+Date: 2025-10-31
+
+## Plan
+
+- PLAN-041 — Advanced OAuth + JWT login (-6)
+  - Date: 2025-10-31
+  - Scope: Add a single-feature app for Google/GitHub OAuth, cookie session via auth-helpers, and a JWT-protected API route with verification using `SUPABASE_JWT_SECRET`.
+  - Outputs: `apps/project-burger-shop-auth-advanced-6/*`, usage README, docs page under `docs/project-burger-shop-auth-advanced-6.md`.
+
+## Done
+
+- DONE-041 — Created advanced login demo (-6)
+  - Date: 2025-10-31
+  - Result: Added app with Google/GitHub OAuth, callback handler, protected page via middleware, and `/api/jwt-echo` verifying Supabase access token; included README and docs.

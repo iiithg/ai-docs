@@ -103,7 +103,7 @@ create trigger update_promo_codes_updated_at
 -- Disable RLS on menu_items table
 alter table public.menu_items disable row level security;
 
--- Disable RLS on promo_codes table  
+-- Disable RLS on promo_codes table
 alter table public.promo_codes disable row level security;
 
 -- ============================================================================
@@ -119,14 +119,14 @@ values
   ('Double Burger', 'Deluxe burger with double beef patties', 'burger', 1299, true, '🍔🍔'),
   ('Chicken Burger', 'Tender chicken breast with special spices', 'burger', 849, true, '🐔'),
   ('Veggie Burger', 'Plant-based patty with fresh vegetables', 'burger', 749, true, '🥬'),
-  
+
   -- Sides
   ('French Fries', 'Golden crispy french fries', 'side', 349, true, '🍟'),
   ('Onion Rings', 'Crispy onion rings with dipping sauce', 'side', 399, true, '🧅'),
   ('Chicken Nuggets', '6 pieces of crispy chicken nuggets', 'side', 449, true, '🍗'),
   ('Garden Salad', 'Fresh vegetable salad with dressing', 'side', 299, true, '🥗'),
   ('Cheese Fries', 'French fries with melted cheese sauce', 'side', 449, true, '🧀🍟'),
-  
+
   -- Drinks
   ('Coca Cola', 'Classic Coca Cola', 'drink', 199, true, '🥤'),
   ('Sprite', 'Refreshing lemon-lime soda', 'drink', 199, true, '🍋'),
@@ -146,16 +146,16 @@ values
   ('WELCOME10', 'New customer 10% discount', 'percentage', 10, true),
   ('SAVE20', '20% off for orders', 'percentage', 20, true),
   ('STUDENT15', 'Student special 15% discount', 'percentage', 15, true),
-  
+
   -- Active fixed amount discounts
   ('FIRST5', 'First order $5 off', 'fixed_amount', 500, true),
   ('SAVE10', '$10 off orders', 'fixed_amount', 1000, true),
   ('LUNCH3', 'Lunch time $3 off', 'fixed_amount', 300, true),
-  
+
   -- Inactive codes (for testing status toggle)
   ('EXPIRED', 'Expired promo code', 'percentage', 25, false),
   ('DISABLED', 'Disabled promo code', 'fixed_amount', 800, false),
-  
+
   -- Special offers
   ('WEEKEND30', 'Weekend special 30% off', 'percentage', 30, true),
   ('VIP50', 'VIP exclusive 50% off', 'percentage', 50, true)

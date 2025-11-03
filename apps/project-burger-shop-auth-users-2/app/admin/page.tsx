@@ -33,8 +33,8 @@ export default function AdminPage() {
   // CRUD state
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [menuForm, setMenuForm] = useState({ name: '', description: '', category: 'burger' as const, price: '8.99', quantity: 10, emoji: '🍔' });
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ name: '', description: '', category: 'burger' as const, price: '0.00', quantity: 0, emoji: '🍔' });
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [editForm, setEditForm] = useState<Partial<MenuItem>>({});
 
   useEffect(() => {
     const stored = getStoredSupabaseSettings();
@@ -110,30 +110,33 @@ export default function AdminPage() {
   }
 
   function startEdit(item: MenuItem) {
-    setEditingId(item.id);
+    setEditingItem(item);
     setEditForm({
       name: item.name,
-      description: item.description || '',
+      description: item.description,
       category: item.category,
-      price: (item.price_cents / 100).toFixed(2),
+      price_cents: item.price_cents,
       quantity: item.quantity,
-      emoji: item.emoji || '🍔'
+      available: item.available,
+      emoji: item.emoji
     });
   }
 
-  async function saveItem() {
-    if (!services || !editingId) return;
-    const price_cents = parsePrice(editForm.price);
-    await services.menuItems.update(editingId, {
-      name: editForm.name.trim(),
-      description: editForm.description.trim() || undefined,
-      category: editForm.category,
-      price_cents,
-      quantity: Number.isFinite(editForm.quantity as any) ? Number(editForm.quantity) : undefined,
-      emoji: editForm.emoji
-    });
-    setEditingId(null);
-    setMenuItems(await services.menuItems.getAll());
+  function cancelEdit() {
+    setEditingItem(null);
+    setEditForm({});
+  }
+
+  async function saveEdit() {
+    if (!services || !editingItem) return;
+    try {
+      await services.menuItems.update(editingItem.id, editForm);
+      setEditingItem(null);
+      setEditForm({});
+      setMenuItems(await services.menuItems.getAll());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to save');
+    }
   }
 
   async function toggleAvail(id: string) {
@@ -214,67 +217,35 @@ export default function AdminPage() {
         </div>
         <div className="divide-y">
           {menuItems.map(item => {
-            const isEditing = editingId === item.id;
             const cat = CATEGORIES.find(c=>c.value===item.category);
             return (
               <div key={item.id} className="px-6 py-4 grid grid-cols-1 md:grid-cols-8 items-center gap-4">
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{item.emoji || cat?.icon}</span>
-                  {isEditing ? (
-                    <input className="px-2 py-1 border rounded text-sm" value={editForm.name} onChange={e=>setEditForm({...editForm, name:e.target.value})}/>
-                  ) : (
-                    <div>
-                      <div className="font-medium">{item.name}</div>
-                      {item.description && <div className="text-xs text-neutral-500">{item.description}</div>}
-                    </div>
-                  )}
+                  <div>
+                    <div className="font-medium">{item.name}</div>
+                    {item.description && <div className="text-xs text-neutral-500">{item.description}</div>}
+                  </div>
                 </div>
                 <div>
-                  {isEditing ? (
-                    <select className="px-2 py-1 border rounded text-sm" value={editForm.category} onChange={e=>setEditForm({...editForm, category:e.target.value as any})}>
-                      {CATEGORIES.map(c=> (<option key={c.value} value={c.value}>{c.label}</option>))}
-                    </select>
-                  ) : (
-                    <span className="text-sm text-neutral-600">{cat?.label}</span>
-                  )}
+                  <span className="text-sm text-neutral-600">{cat?.label}</span>
                 </div>
                 <div>
-                  {isEditing ? (
-                    <input className="px-2 py-1 border rounded text-sm" value={editForm.price} onChange={e=>setEditForm({...editForm, price:e.target.value})}/>
-                  ) : (
-                    <span className="font-semibold">{formatPrice(item.price_cents)}</span>
-                  )}
+                  <span className="font-semibold">{formatPrice(item.price_cents)}</span>
                 </div>
                 <div>
-                  {isEditing ? (
-                    <input className="px-2 py-1 border rounded text-sm" type="number" min={0} value={editForm.quantity} onChange={e=>setEditForm({...editForm, quantity: Number(e.target.value)})}/>
-                  ) : (
-                    <span className="text-sm">Qty: {item.quantity}</span>
-                  )}
+                  <span className="text-sm">Qty: {item.quantity}</span>
                 </div>
                 <div>
-                  {isEditing ? (
-                    <input className="px-2 py-1 border rounded text-sm text-center" value={editForm.emoji} onChange={e=>setEditForm({...editForm, emoji:e.target.value})} maxLength={2}/>
-                  ) : (
-                    <span className="text-lg">{item.emoji}</span>
-                  )}
+                  <span className="text-lg">{item.emoji}</span>
                 </div>
                 <div>
                   <button onClick={()=>toggleAvail(item.id)} className={`px-3 py-1 rounded-full text-xs font-medium ${item.available? 'bg-green-100 text-green-800':'bg-gray-100 text-gray-800'}`}>{item.available? 'Available':'Unavailable'}</button>
                 </div>
                 <div className="text-xs text-neutral-500">{new Date(item.created_at).toLocaleDateString('en-US')}</div>
                 <div className="flex justify-end gap-2">
-                  {isEditing ? (
-                    <>
-                      <button onClick={saveItem} className="px-3 py-1 bg-green-600 text-white rounded text-sm">Save</button>
-                      <button onClick={()=>setEditingId(null)} className="px-3 py-1 bg-gray-600 text-white rounded text-sm">Cancel</button>
-                    </>
-                  ) : (
-                    <>
-                      <button onClick={()=>startEdit(item)} className="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
-                      <button onClick={()=>removeItem(item.id)} className="px-3 py-1 bg-red-600 text-white rounded text-sm">Delete</button>
-                    </>
-                  )}
+                  <button onClick={()=>startEdit(item)} className="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
+                  <button onClick={()=>removeItem(item.id)} className="px-3 py-1 bg-red-600 text-white rounded text-sm">Delete</button>
                 </div>
               </div>
             );
@@ -284,6 +255,126 @@ export default function AdminPage() {
           )}
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {editingItem && (
+        <>
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-[9999]"
+            onClick={cancelEdit}
+          />
+          <div className="fixed inset-0 flex items-center justify-center p-4 z-[10000] pointer-events-none">
+            <div
+              className="bg-white rounded-lg p-4 w-full max-w-sm shadow-xl pointer-events-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Edit Menu Item</h2>
+                <button
+                  onClick={cancelEdit}
+                  className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Name</label>
+                  <input
+                    type="text"
+                    value={editForm.name || ''}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    className="w-full px-2 py-1 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Description</label>
+                  <textarea
+                    value={editForm.description || ''}
+                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                    className="w-full px-2 py-1 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+                    rows={2}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Category</label>
+                  <select
+                    value={editForm.category || 'burger'}
+                    onChange={(e) => setEditForm({ ...editForm, category: e.target.value as 'burger' | 'side' | 'drink' })}
+                    className="w-full px-2 py-1 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+                  >
+                    {CATEGORIES.map(c => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Price (¥)</label>
+                    <input
+                      type="number"
+                      value={((editForm.price_cents || 0) / 100).toFixed(2)}
+                      onChange={(e) => setEditForm({ ...editForm, price_cents: Math.round(parseFloat(e.target.value) * 100) || 0 })}
+                      className="w-full px-2 py-1 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+                      step="0.01"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Quantity</label>
+                    <input
+                      type="number"
+                      value={editForm.quantity || 0}
+                      onChange={(e) => setEditForm({ ...editForm, quantity: parseInt(e.target.value) || 0 })}
+                      className="w-full px-2 py-1 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Emoji</label>
+                    <input
+                      type="text"
+                      value={editForm.emoji || ''}
+                      onChange={(e) => setEditForm({ ...editForm, emoji: e.target.value })}
+                      className="w-full px-2 py-1 border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+                      placeholder="🍔"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 mt-6">
+                    <input
+                      type="checkbox"
+                      checked={editForm.available || false}
+                      onChange={(e) => setEditForm({ ...editForm, available: e.target.checked })}
+                      className="rounded"
+                    />
+                    <label className="text-sm font-medium">Available</label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  onClick={cancelEdit}
+                  className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveEdit}
+                  className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

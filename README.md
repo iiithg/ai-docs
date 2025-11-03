@@ -213,6 +213,44 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 - **Database connection errors**: Verify your Supabase URL and keys are correct
 - **SQL script failures**: Ensure you're using a fresh Supabase project
 
+## 🚀 Supabase Edge Functions Development Approaches
+
+Supabase provides two mainstream development approaches for Edge Functions, meeting different team workflow needs:
+
+### 1. CLI Deployment (ideal for professional developers & CI/CD)
+- Local bundling: use the Supabase CLI to compile source code into a single `main.js`.
+- Secure upload: push to the cloud via Bearer Token authentication.
+- Best for automated deployments and GitOps pipelines.
+
+### 2. Studio Visual Deployment (ideal for rapid iteration & team collaboration)
+- Edit function code directly in the browser.
+- One‑click publishing with "Save and Deploy".
+- Syntax highlighting, error tips, and real‑time saving.
+- No local environment required; product managers and operations can participate.
+
+### Complete Serverless Development Loop
+Together, these two approaches form a complete, efficient, and out‑of‑the‑box serverless development loop on Supabase Cloud.
+
+## ⚠️ Open‑Source Supabase Capability Gap: Engine Without a Cockpit
+
+Supabase is open‑source, but its Edge Functions management backend (FaaS Backend) is not open‑source. This implies:
+
+**What you can do**
+- Run edge functions locally using `supabase start` (simulation environment).
+- Deploy a container that includes `edge-runtime`.
+
+**What you cannot do**
+- Create, edit, or deploy functions via Studio.
+- Push code to a self‑hosted instance via CLI.
+
+Many enterprises attempting to self‑host Supabase find Edge Functions "unavailable" or "only manual script deployment", and eventually abandon this core capability.
+
+## 🏢 Enterprise‑Grade Development: PolarDB Supabase (Managed)
+
+PolarDB Supabase is a fully managed Supabase service built on PolarDB for PostgreSQL. It integrates Realtime, RESTful APIs, GoTrue authentication, file storage, and logging collection, with optimizations and enhancements. It removes complex parameter management and operational overhead, offering a flexible and high‑performance backend solution. Teams can quickly build modern Web apps, SaaS platforms, and AI‑integrated applications.
+
+Reference: https://help.aliyun.com/zh/polardb/polardb-for-postgresql/polardb-supabase-best-practices
+
 ## 📚 Learning Path
 
 Recommended order for learning Supabase features:

@@ -188,6 +188,296 @@ http://localhost:8080/chat
 - **Connection Management**: Proper cleanup on component unmount
 - **Memory Management**: Cursor positions stored efficiently
 
+## 🛠️ Technical Implementation & Supabase APIs
+
+### Real-time Chat Implementation
+
+#### Technical Principles
+The real-time chat functionality is built on Supabase's **Postgres Changes** mechanism, which enables real-time message delivery through database change events.
+
+#### Core Implementation
+
+**1. Database Table Structure & Replication Setup**
+*File: `scripts/init.sql`*
+
+```sql
+-- Configure RLS (Row Level Security)
+ALTER TABLE chat_messages DISABLE ROW LEVEL SECURITY;
+
+-- Set up real-time replication identity
+ALTER TABLE chat_messages REPLICA IDENTITY FULL;
+
+-- Add to supabase_realtime publication
+ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_messages;
+```
+
+**2. Frontend Real-time Subscription**
+*File: `app/chat/page.tsx:116-147`*
+
+```typescript
+// Listen for database INSERT events
+const subscription = supabase
+  .channel('chat_messages_channel')  // Create dedicated channel
+  .on('postgres_changes', {
+    event: 'INSERT',                  // Only listen to insert events
+    schema: 'public',                 // Database schema
+    table: 'chat_messages'           // Target table name
+  }, (payload: any) => {
+    // Handle new message event
+    const newMessage = payload.new as Message;
+    setMessages(prev => {
+      // Duplicate prevention logic
+      const exists = prev.some(msg =>
+        msg.id === newMessage.id ||
+        (msg.username === newMessage.username &&
+         msg.content === newMessage.content &&
+         Math.abs(new Date(msg.created_at).getTime() -
+                  new Date(newMessage.created_at).getTime()) < 1000)
+      );
+      return exists ? prev : [...prev, newMessage];
+    });
+  })
+  .subscribe((status: string) => {
+    console.log('Chat subscription status:', status);
+  });
+```
+
+**3. Optimistic Update Mechanism**
+*File: `app/chat/page.tsx:285-341`*
+
+```typescript
+// Immediately display message when sent, wait for database confirmation
+const tempMessage: Message = {
+  id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+  username: anonymousUser.name,
+  content: newMessage.trim(),
+  created_at: new Date().toISOString()
+};
+
+// Optimistic UI update
+setMessages(prev => [...prev, tempMessage]);
+setNewMessage('');
+
+// Async database write
+const { data, error } = await supabase
+  .from('chat_messages')
+  .insert({
+    username: anonymousUser.name,
+    content: newMessage.trim(),
+    room: 'lobby'
+  })
+  .select();
+
+// Handle result: replace temp message on success, rollback on error
+if (error) {
+  setMessages(prev => prev.filter(msg => msg.id !== tempId));
+  setNewMessage(content); // Restore input content
+} else if (data && data.length > 0) {
+  setMessages(prev => prev.map(msg =>
+    msg.id === tempId ? data[0] : msg
+  ));
+}
+```
+
+#### Key Supabase APIs
+
+**1. `supabase.channel(name)`**
+- Creates real-time communication channel
+- Supports multiple event types: `postgres_changes`, `presence`, `broadcast`
+
+**2. `channel.on(event, filter, callback)`**
+- `postgres_changes`: Listen for database changes
+- `presence`: User online presence management
+- `broadcast`: Custom message broadcasting
+
+**3. `channel.subscribe()`**
+- Activates channel subscription
+- Returns subscription status (`SUBSCRIBED`, `TIMED_OUT`, `CLOSED`)
+
+### Mouse Synchronization Implementation
+
+#### Technical Principles
+Mouse synchronization uses Supabase's **Broadcast** functionality for low-latency peer-to-peer coordinate broadcasting without database storage.
+
+#### Core Implementation
+
+**1. Presence + Broadcast Hybrid Channel**
+*File: `app/chat/page.tsx:153-159`*
+
+```typescript
+const channel = supabase.channel('lobby_presence', {
+  config: {
+    presence: { key: anonymousUser.id },  // User identity key
+    broadcast: { self: true }              // Receive own broadcasts
+  }
+});
+```
+
+**2. Online User State Management**
+*File: `app/chat/page.tsx:167-183`*
+
+```typescript
+// Presence event handling
+channel.on('presence', { event: 'sync' }, () => {
+  const state: any = channel.presenceState();
+  const flat: Record<string, PresenceUser> = {};
+  // Flatten multi-dimensional array
+  Object.values(state).forEach((arr: any) =>
+    arr.forEach((u: any) => { flat[u.id] = { ...u }; })
+  );
+  setOnline(flat); // Update online user state
+});
+
+// User join event
+channel.on('presence', { event: 'join' }, ({ key, newPresences }) => {
+  console.log('User joined:', key, newPresences);
+});
+
+// User leave event
+channel.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+  console.log('User left:', key, leftPresences);
+});
+```
+
+**3. Mouse Position Broadcasting Mechanism**
+*File: `app/chat/page.tsx:210-240`*
+
+```typescript
+// Mouse movement event handling (with throttling optimization)
+useEffect(() => {
+  let lastSent = 0;
+  const throttleMs = 50; // 20fps = 1000/50ms
+
+  const handleMouseMove = (e: MouseEvent) => {
+    const now = Date.now();
+    if (now - lastSent < throttleMs) return; // Throttle control
+    lastSent = now;
+
+    const payload = {
+      id: anonymousUser.id,
+      x: e.clientX,
+      y: e.clientY,
+      name: anonymousUser.name,
+      color: anonymousUser.color
+    };
+
+    // Send broadcast message
+    channelRef.current?.send({
+      type: 'broadcast',
+      event: 'cursor',      // Custom event type
+      payload
+    });
+  };
+
+  document.addEventListener('mousemove', handleMouseMove);
+  return () => document.removeEventListener('mousemove', handleMouseMove);
+}, [anonymousUser]);
+
+// Receive other users' mouse positions
+channel.on('broadcast', { event: 'cursor' }, ({ payload }) => {
+  console.log('Cursor update:', payload);
+  setOnline(prev => ({
+    ...prev,
+    [payload.id]: {
+      ...(prev[payload.id] || {
+        id: payload.id,
+        name: 'Unknown',
+        color: '#666'
+      }),
+      x: payload.x,
+      y: payload.y
+    }
+  }));
+});
+```
+
+**4. Real-time State Tracking**
+*File: `app/chat/page.tsx:196-203`*
+
+```typescript
+// Start tracking user state after subscription completes
+channel.subscribe(async (status: string) => {
+  console.log('Presence subscription status:', status);
+  if (status === 'SUBSCRIBED') {
+    // Start tracking current user
+    const me: PresenceUser = {
+      id: anonymousUser.id,
+      name: anonymousUser.name,
+      color: anonymousUser.color
+    };
+    await channel.track(me);  // Register user with Presence system
+  }
+});
+```
+
+#### Key Supabase APIs
+
+**1. `channel.send(options)`**
+- Sends broadcast messages
+- `type: 'broadcast'`: Broadcast type
+- `event`: Custom event identifier
+- `payload`: Data to transmit
+
+**2. `channel.track(state)`**
+- Registers user state with Presence system
+- Handles connection state management automatically
+- Auto-cleanup on disconnect
+
+**3. `channel.presenceState()`**
+- Retrieves current online user states
+- Returns nested array format of state data
+
+**4. Event Types Explained**
+- `postgres_changes`: Database change events
+- `presence_sync`: State synchronization events
+- `presence_join`: User join events
+- `presence_leave`: User leave events
+- `broadcast`: Custom broadcast events
+
+### Architecture Advantages
+
+**1. Three-Layer Real-time Complementarity**
+- **Postgres Changes**: Persistent data sync (messages)
+- **Presence**: User state management (online list)
+- **Broadcast**: Temporary data transmission (mouse positions)
+
+**2. Performance Optimization Strategies**
+- Mouse event throttling (20fps) to prevent network congestion
+- Optimistic updates for enhanced user experience
+- Automatic reconnection and error recovery mechanisms
+- Memory-efficient state management
+
+**3. Extensibility Design**
+- Supports multi-room functionality extensions
+- Anonymous user system can be replaced with authenticated users
+- Modular event handling architecture
+- Easy to add new event types
+
+## 📁 Implementation File Locations
+
+### Core Files
+- **Chat Interface**: `app/chat/page.tsx` - Complete real-time implementation (531 lines)
+- **Database Schema**: `scripts/init.sql` - Database initialization and real-time setup
+- **Component**: `app/components/UserAvatar.tsx` - User avatar display component
+- **Setup Guide**: `REALTIME_SETUP.md` - Troubleshooting and configuration guide
+
+### Key Code Sections by Feature
+
+**Real-time Chat Implementation:**
+- Message subscription: `app/chat/page.tsx:116-147`
+- Message sending with optimistic updates: `app/chat/page.tsx:285-341`
+- Duplicate message prevention logic: `app/chat/page.tsx:126-141`
+
+**Mouse Synchronization Implementation:**
+- Channel setup with presence & broadcast: `app/chat/page.tsx:153-159`
+- Mouse event throttling and broadcasting: `app/chat/page.tsx:210-240`
+- Online user presence management: `app/chat/page.tsx:167-183`
+
+**UI Components:**
+- Configuration form: `app/chat/page.tsx:344-429`
+- Cursor overlay rendering: `app/chat/page.tsx:435-453`
+- Online users sidebar: `app/chat/page.tsx:456-484`
+
 ## 🔧 Development Notes
 
 ### Port Configuration

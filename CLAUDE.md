@@ -12,17 +12,19 @@ This is a collection of Supabase demonstration projects featuring a burger shop 
 - `apps/project-burger-shop-menu-crud-1/` - Menu items CRUD with database operations
 - `apps/project-burger-shop-auth-users-2/` - Authentication, profiles, wallet system, and admin controls
 - `apps/project-burger-shop-realtime-orders-3/` - Realtime chat and presence cursors
-- `apps/project-burger-shop-storage-uploads-4/` - File storage for avatars (placeholder)
-- `apps/project-burger-shop-edge-function-5/` - Edge function demos (placeholder)
+- `apps/project-burger-shop-storage-uploads-4/` - File storage for avatars with anonymous/guest uploads
+- `apps/project-burger-shop-edge-function-5/` - Edge function demos with LLM chat, email service, user registration
 - `apps/project-burger-shop-small/` - Combined features 1+2 (placeholder)
 - `apps/project-burger-shop-big/` - Combined features 1-5 (placeholder)
 
 ### Architecture
 
 All apps share:
+
 - **Framework**: Next.js 14 with TypeScript
 - **Styling**: Tailwind CSS
 - **Database**: Supabase (PostgreSQL with real-time subscriptions)
+
 - **Language**: TypeScript with 2-space indentation, single quotes, semicolons
 
 Each demo app is scaffolded from `burger-template` and focuses on a single feature set. Database initialization is handled through SQL scripts in each app's `scripts/` directory.
@@ -46,9 +48,33 @@ Apps with database operations use a service layer pattern (`lib/database.ts`):
 - **Error Handling**: Consistent error throwing and handling
 - **Supabase Client Injection**: Services accept SupabaseClient instances
 
+### Service Layer Pattern Example
+
+```typescript
+export class MenuItemsService {
+  constructor(private supabase: SupabaseClient) {}
+
+  async getAll(): Promise<MenuItem[]> {
+    const { data, error } = await this.supabase
+      .from('menu_items')
+      .select('*');
+    if (error) throw error;
+    return data || [];
+  }
+}
+
+export function createDatabaseServices(supabase: SupabaseClient) {
+  return {
+    menuItems: new MenuItemsService(supabase),
+    profiles: new ProfilesService(supabase),
+  };
+}
+```
+
 ## Development Commands
 
 ### Per App Development
+
 Navigate to any app directory (e.g., `cd apps/burger-template`):
 
 ```bash
@@ -108,6 +134,7 @@ NEXT_PUBLIC_ADMIN_EMAILS=admin@example.com,another@example.com
 - Development policies are permissive; production policies are stricter
 - Stored procedures (RPCs) for complex operations like purchases
 - Automatic triggers for profile creation and timestamp management
+- Idempotent SQL scripts using `drop-if-exists`/`create or replace`
 
 ### Code Style
 
@@ -116,6 +143,22 @@ NEXT_PUBLIC_ADMIN_EMAILS=admin@example.com,another@example.com
 - Hooks: `useSomething.ts`
 - Files and folders: `kebab-case`
 - Named exports preferred over default exports
+
+## Common Database Schema
+
+### Shared Tables Across Apps
+
+- **menu_items**: Product catalog with quantity tracking
+- **profiles**: User profiles with wallet and role management
+- **orders**: Purchase history with atomic operations
+- **promo_codes**: Discount management system
+
+### Key Database Features
+
+- **Atomic Operations**: All financial operations use PostgreSQL transactions
+- **Automatic Triggers**: Profile creation on user signup, stock management
+- **RLS Implementation**: Production-ready security policies
+- **Storage Buckets**: For file uploads with access control policies
 
 ## Testing and Quality
 
@@ -130,6 +173,19 @@ NEXT_PUBLIC_ADMIN_EMAILS=admin@example.com,another@example.com
 3. **Documentation**: Update per-app README.md and project docs in `docs/`
 4. **Planning**: Add PLAN entries to `docs/plan-done.md` before starting work
 5. **Completion**: Update PLAN to DONE in `docs/plan-done.md` when finished
+
+## Edge Functions
+
+Edge Functions are located in `supabase/functions/` and use Deno runtime:
+
+- **weather**: External API proxy example
+- **llm-chat**: OpenAI GPT integration
+- **send-email**: Email service with templates
+- **user-registration**: Automated signup workflow
+- **signup-with-invite**: Invite-only registration
+- **manage-invites**: CRUD operations for invitation codes
+
+Deploy with: `supabase functions deploy`
 
 ## Important Notes
 

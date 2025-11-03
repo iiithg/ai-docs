@@ -190,89 +190,108 @@ export default function ShopPage() {
       )}
 
       {userId && (
-      <section className="rounded-lg border bg-white">
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <div className="font-semibold">Available Items</div>
-          <button className="text-sm rounded border px-2 py-1" onClick={async ()=>{
-            try {
-              setLoading(true);
-              setError(null);
-              if (userId) {
-                const [items, p] = await Promise.all([
-                  services!.menuItems.getAvailable(),
-                  services!.profiles.getMyProfile()
-                ]);
-                setMenu(items);
-                setProfile(p);
-                try {
-                  const owned = await services!.orders.getMyPurchases();
-                  setPurchases(owned);
-                } catch (e) {
-                  console.warn('getMyPurchases failed', e);
-                }
-              }
-            } catch (e) {
-              setError(getErrMessage(e));
-            } finally { setLoading(false); }
-          }}>{loading? 'Refreshing...':'Refresh'}</button>
-        </div>
-        <ul className="divide-y">
-          {menu.map((m)=> (
-            <li key={m.id} className="px-4 py-3 grid grid-cols-1 md:grid-cols-5 items-center gap-3">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{m.emoji || '🍔'}</span>
-                <div>
-                  <div className="font-medium">{m.name}</div>
-                  {m.description && <div className="text-xs text-neutral-500">{m.description}</div>}
-                </div>
-              </div>
-              <div className="text-sm text-neutral-600">{m.category}</div>
-              <div className="font-semibold">{formatPrice(m.price_cents)}</div>
-              <div className="text-xs text-neutral-500">{new Date(m.created_at).toLocaleDateString('en-US')} · Qty: {m.quantity}</div>
-              <div className="flex justify-end">
-                <button
-                  disabled={!userId || !m.available}
-                  onClick={() => buy(m)}
-                  className="rounded bg-burger-red px-3 py-2 text-white text-sm disabled:opacity-50"
-                >
-                  {userId ? 'Buy' : 'Sign in first'}
-                </button>
-              </div>
-            </li>
-          ))}
-          {menu.length === 0 && (
-            <li className="px-4 py-6 text-center text-sm text-neutral-500">No items yet. Please add some in the CRUD app.</li>
-          )}
-        </ul>
-      </section>
-      )}
+      <div className="space-y-3">
+        <section className="rounded-lg border bg-white">
+          <div className="flex items-center justify-between px-4 py-3 border-b">
+            <div className="font-semibold">My Purchases</div>
+          </div>
+          <div className="px-4 py-2">
+            {purchases.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {(() => {
+                  // Group purchases by item_id and count quantities
+                  const groupedPurchases = purchases.reduce((acc, item) => {
+                    if (!acc[item.item_id]) {
+                      acc[item.item_id] = {
+                        ...item,
+                        count: 0,
+                        lastPurchasedAt: item.purchased_at
+                      };
+                    }
+                    acc[item.item_id].count += 1;
+                    // Update last purchased date if this item is newer
+                    if (new Date(item.purchased_at) > new Date(acc[item.item_id].lastPurchasedAt)) {
+                      acc[item.item_id].lastPurchasedAt = item.purchased_at;
+                    }
+                    return acc;
+                  }, {} as Record<string, PurchasedItem & { count: number; lastPurchasedAt: string }>);
 
-      {userId && (
-      <section className="rounded-lg border bg-white">
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <div className="font-semibold">My Purchases</div>
-        </div>
-        <ul className="divide-y">
-          {purchases.map((m)=> (
-            <li key={m.order_id} className="px-4 py-3 grid grid-cols-1 md:grid-cols-5 items-center gap-3">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{m.emoji || '🍔'}</span>
-                <div>
-                  <div className="font-medium">{m.name}</div>
-                  {m.description && <div className="text-xs text-neutral-500">{m.description}</div>}
-                </div>
+                  return Object.values(groupedPurchases).map((m) => (
+                    <div key={m.item_id} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 text-sm">
+                      <span className="text-lg">{m.emoji || '🍔'}</span>
+                      <span className="font-medium">{m.name}</span>
+                      <span className="text-neutral-600">·</span>
+                      <span className="font-semibold">{formatPrice(m.price_cents)}</span>
+                      <span className="text-neutral-600">·</span>
+                      <span className="text-xs text-neutral-500">I have: {m.count}</span>
+                      <span className="text-neutral-600">·</span>
+                      <span className="text-xs text-neutral-500">{new Date(m.lastPurchasedAt).toLocaleDateString('en-US')}</span>
+                    </div>
+                  ));
+                })()}
               </div>
-              <div className="text-sm text-neutral-600">{m.category}</div>
-              <div className="font-semibold">{formatPrice(m.price_cents)}</div>
-              <div className="text-xs text-neutral-500">{new Date(m.purchased_at).toLocaleDateString('en-US')}</div>
-              <div className="text-right text-xs text-neutral-500">Current Qty: {m.quantity}</div>
-            </li>
-          ))}
-          {purchases.length === 0 && (
-            <li className="px-4 py-6 text-center text-sm text-neutral-500">No purchases yet.</li>
-          )}
-        </ul>
-      </section>
+            ) : (
+              <div className="text-center text-sm text-neutral-500 py-4">No purchases yet.</div>
+            )}
+          </div>
+        </section>
+
+        <section className="rounded-lg border bg-white">
+          <div className="flex items-center justify-between px-4 py-3 border-b">
+            <div className="font-semibold">Available Items</div>
+            <button className="text-sm rounded border px-2 py-1" onClick={async ()=>{
+              try {
+                setLoading(true);
+                setError(null);
+                if (userId) {
+                  const [items, p] = await Promise.all([
+                    services!.menuItems.getAvailable(),
+                    services!.profiles.getMyProfile()
+                  ]);
+                  setMenu(items);
+                  setProfile(p);
+                  try {
+                    const owned = await services!.orders.getMyPurchases();
+                    setPurchases(owned);
+                  } catch (e) {
+                    console.warn('getMyPurchases failed', e);
+                  }
+                }
+              } catch (e) {
+                setError(getErrMessage(e));
+              } finally { setLoading(false); }
+            }}>{loading? 'Refreshing...':'Refresh'}</button>
+          </div>
+          <ul className="divide-y">
+            {menu.map((m)=> (
+              <li key={m.id} className="px-4 py-3 grid grid-cols-1 md:grid-cols-5 items-center gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{m.emoji || '🍔'}</span>
+                  <div>
+                    <div className="font-medium">{m.name}</div>
+                    {m.description && <div className="text-xs text-neutral-500">{m.description}</div>}
+                  </div>
+                </div>
+                <div className="text-sm text-neutral-600">{m.category}</div>
+                <div className="font-semibold">{formatPrice(m.price_cents)}</div>
+                <div className="text-xs text-neutral-500">{new Date(m.created_at).toLocaleDateString('en-US')} · Qty: {m.quantity}</div>
+                <div className="flex justify-end">
+                  <button
+                    disabled={!userId || !m.available}
+                    onClick={() => buy(m)}
+                    className="rounded bg-burger-red px-3 py-2 text-white text-sm disabled:opacity-50"
+                  >
+                    {userId ? 'Buy' : 'Sign in first'}
+                  </button>
+                </div>
+              </li>
+            ))}
+            {menu.length === 0 && (
+              <li className="px-4 py-6 text-center text-sm text-neutral-500">No items yet. Please add some in the CRUD app.</li>
+            )}
+          </ul>
+        </section>
+      </div>
       )}
     </div>
   );
