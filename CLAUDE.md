@@ -171,8 +171,6 @@ NEXT_PUBLIC_ADMIN_EMAILS=admin@example.com,another@example.com
 1. **New Features**: Start from `burger-template` or clone an existing demo
 2. **Database Changes**: Update SQL scripts in `scripts/` directory
 3. **Documentation**: Update per-app README.md and project docs in `docs/`
-4. **Planning**: Add PLAN entries to `docs/plan-done.md` before starting work
-5. **Completion**: Update PLAN to DONE in `docs/plan-done.md` when finished
 
 ## Edge Functions
 
