@@ -3,7 +3,7 @@
 INSERT INTO orders (user_id, status, amount, details, is_paid)
 VALUES (
   2012, 'paid', 9.99,
-  '{"items":[{"sku":"BGR002","name":"Chicken Burger","qty":1,"price":9.99}]}',
+  '{"items":[{"sku":"BGR002","name":"AIID Burger","qty":100,"price":1000}]}',
   true
 );
 -- Expected Output:
