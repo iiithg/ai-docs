@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Settings from "@/app/components/Settings";
 import { createSupabaseClientFromSettings } from "@/lib/supabase/dynamic-client";
+import UppyUpload from "@/app/components/UppyUpload";
 
 type User = { id: string; email?: string | null };
 type Profile = { id: string; full_name: string | null; birthday: string | null; avatar_url: string | null };
@@ -12,9 +13,6 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [message, setMessage] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string>("");
   const [lastUploadedUrl, setLastUploadedUrl] = useState<string>("");
 
   // init client
@@ -34,7 +32,7 @@ export default function ProfilePage() {
         const { data, error } = await supabase
           .from('profiles')
           .select('id, full_name, birthday, avatar_url')
-          .eq('id', u.id)
+          .eq('user_id', u.id)
           .maybeSingle();
         if (error) setMessage(error.message);
         else setProfile(data);
@@ -72,144 +70,72 @@ export default function ProfilePage() {
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);
-    setSelectedFile(null);
-    setPreviewUrl("");
     setMessage("Signed out.");
   }
-
-  function onFileChange(file?: File | null) {
-    const f = file ?? fileInputRef.current?.files?.[0] ?? null;
-    setSelectedFile(f || null);
-    setMessage("");
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    if (f) setPreviewUrl(URL.createObjectURL(f));
-    else setPreviewUrl("");
-  }
-
-  async function handleUpload() {
-    if (!supabase) { setMessage('Configure Supabase first.'); return; }
-    if (!selectedFile) { setMessage('Choose a file.'); return; }
-
-    // basic validation
-    const allowed = ['image/png','image/jpeg','image/gif','image/webp'];
-    if (!allowed.includes(selectedFile.type)) { setMessage('Only PNG, JPG, GIF, WEBP'); return; }
-    const maxBytes = 2 * 1024 * 1024; // 2 MB
-    if (selectedFile.size > maxBytes) { setMessage('Max file size is 2 MB'); return; }
-
-    setLoading(true);
-    setMessage('Uploading...');
-    try {
-      const ext = (selectedFile.name.split('.').pop() || 'jpg').toLowerCase();
-      const uuid = (typeof crypto !== 'undefined' && (crypto as any).randomUUID) ? (crypto as any).randomUUID() : Math.random().toString(36).slice(2);
-      const path = user ? `${user.id}/avatar.${ext}` : `guest/${uuid}-avatar.${ext}`;
-
-      const { error: upErr } = await supabase
-        .storage
-        .from('avatars')
-        .upload(path, selectedFile, { upsert: true, cacheControl: '3600', contentType: selectedFile.type });
-      if (upErr) throw upErr;
-
-      const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
-      const publicUrl = pub?.publicUrl || '';
-      if (!publicUrl) throw new Error('Failed to get public URL');
-
-      if (user) {
-        const { error: updErr } = await supabase
-          .from('profiles')
-          .update({ avatar_url: publicUrl })
-          .eq('id', user.id);
-        if (updErr) throw updErr;
-        setProfile((p)=> p ? { ...p, avatar_url: publicUrl } : p);
-        setMessage('✅ Uploaded and profile updated.');
-      } else {
-        setMessage('✅ Uploaded anonymously. Copy the URL below.');
-      }
-      setLastUploadedUrl(publicUrl);
-    } catch (err: any) {
-      setMessage(err?.message || 'Upload failed');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const supabaseConfigured = useMemo(() => !!supabase, [supabase]);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">My Profile</h1>
-        <Settings onSettingsChange={handleSettingsChange} defaultOpen />
+        <div>
+          <h1 className="text-2xl font-bold">My Profile</h1>
+          <p className="text-sm text-neutral-500">Upload an avatar and we’ll remember it.</p>
+        </div>
+        <Settings onSettingsChange={handleSettingsChange} />
       </div>
 
-      {!supabaseConfigured && (
-        <div className="p-4 rounded border bg-yellow-50 text-yellow-800">
-          Configure Supabase first (click Settings) or set env.
-        </div>
-      )}
-
-      {supabase && (
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="p-4 border rounded bg-white space-y-3">
-            {user ? (
-              <>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm text-neutral-500">Signed in as</div>
-                    <div className="font-medium">{user.email || user.id}</div>
-                  </div>
-                  <button onClick={handleLogout} className="text-sm text-neutral-600 hover:text-neutral-900">Sign out</button>
-                </div>
-                <div className="h-px bg-neutral-200 my-2" />
-                <div>
-                  <div className="text-sm text-neutral-600 mb-2">Current avatar</div>
-                  {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="avatar" className="w-28 h-28 rounded-full object-cover border" />
-                  ) : (
-                    <div className="w-28 h-28 rounded-full bg-neutral-200 grid place-items-center text-neutral-500">none</div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="text-sm text-neutral-600">Anonymous mode: you can upload without signing in. Optionally sign in to save the URL to your profile.</div>
-                <form onSubmit={handleLogin} className="space-y-3">
-                  <div>
-                    <label className="block text-sm mb-1">Email</label>
-                    <input name="email" type="email" className="w-full rounded border px-3 py-2" />
-                  </div>
-                  <div>
-                    <label className="block text-sm mb-1">Password</label>
-                    <input name="password" type="password" className="w-full rounded border px-3 py-2" />
-                  </div>
-                  <button disabled={loading} className="px-4 py-2 bg-burger-red text-white rounded disabled:bg-neutral-300">{loading? 'Signing in...':'Sign In (optional)'}</button>
-                </form>
-              </>
-            )}
+      {!supabase ? (
+        <div className="text-center py-12">
+          <div className="max-w-md mx-auto space-y-4">
+            <div className="text-6xl">🔧</div>
+            <h2 className="text-xl font-semibold text-gray-700">Supabase configuration required</h2>
+            <p className="text-gray-600">
+              Click the Settings button (top-right) to add your Supabase URL and anon key, then you can start uploading avatars.
+            </p>
           </div>
-
-          <div className="p-4 border rounded bg-white space-y-3">
-            <div className="font-medium">Upload new avatar {user ? '' : '(anonymous supported)'}</div>
-            <input ref={fileInputRef} onChange={()=>onFileChange()} type="file" accept="image/*" />
-            {previewUrl && (
-              <div className="space-y-2">
-                <div className="text-sm text-neutral-500">Preview</div>
-                <img src={previewUrl} alt="preview" className="w-28 h-28 rounded-full object-cover border" />
+        </div>
+      ) : (
+        <div className="p-4 border rounded-lg bg-white space-y-4">
+          {user ? (
+            <div className="flex items-center justify-between">
+              <div className="min-w-0">
+                <div className="text-xs text-neutral-500">Signed in as</div>
+                <div className="font-medium truncate">{user.email || user.id}</div>
               </div>
-            )}
-            <div className="flex gap-2">
-              <button onClick={handleUpload} disabled={loading || !selectedFile} className="px-4 py-2 bg-burger-red text-white rounded disabled:bg-neutral-300">
-                {loading? 'Uploading...' : user ? 'Upload & Save to Profile' : 'Upload (anonymous)'}
-              </button>
-              <button onClick={()=>onFileChange(null)} className="px-4 py-2 text-neutral-600">Clear</button>
+              <button onClick={handleLogout} className="text-sm text-neutral-600 hover:text-neutral-900">Sign out</button>
             </div>
+          ) : (
+            <div className="text-xs p-2 rounded border bg-yellow-50 text-yellow-800">Not signed in — anonymous uploads allowed.</div>
+          )}
+
+          {/* Removed the inline current-avatar preview section per request */}
+
+          <div className="space-y-3">
+            <div className="font-medium">Upload avatar</div>
+            <UppyUpload 
+              supabase={supabase}
+              user={user}
+              hideTitle
+              showDetailsOnSuccess={false}
+              onUploadSuccess={(url) => {
+                setLastUploadedUrl(url);
+                setMessage('Upload successful!');
+                if (user && supabase) {
+                  supabase
+                    .from('profiles')
+                    .select('id, full_name, birthday, avatar_url')
+                    .eq('user_id', user.id)
+                    .maybeSingle()
+                    .then(({ data, error }: { data: any; error: any }) => {
+                      if (!error && data) setProfile(data);
+                    });
+                }
+              }}
+              onUploadError={(error) => {
+                setMessage(`Upload failed: ${error}`);
+              }}
+            />
             {message && <div className="text-sm text-neutral-700">{message}</div>}
-            {lastUploadedUrl && (
-              <div className="text-xs">
-                <div className="text-neutral-500">File URL</div>
-                <a href={lastUploadedUrl} target="_blank" className="text-blue-600 break-all">{lastUploadedUrl}</a>
-              </div>
-            )}
-            <div className="text-xs text-neutral-500">Allowed: PNG/JPG/GIF/WEBP · Max 2 MB · Bucket: <code>avatars</code></div>
+            <div className="text-xs text-neutral-500">Resumable uploads with TUS protocol · Max 2 MB · Bucket: <code>avatars</code></div>
           </div>
         </div>
       )}
