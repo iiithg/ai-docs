@@ -21,6 +21,7 @@ export default function LlmChatPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [endpoint, setEndpoint] = useState('');
+  const [model, setModel] = useState('qwen3-max-preview');
 
   async function send() {
     setLoading(true); setError('');
@@ -34,16 +35,20 @@ export default function LlmChatPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: [...messages, { role: 'user', content: input }],
-          model: 'gpt-3.5-turbo',
+          model: model,
           temperature: 0.5,
           max_tokens: 256,
         }),
         tag: 'llm-chat'
       });
+      const assistantMsg: ChatMessage = {
+        role: 'assistant',
+        content: String((data && (data.text ?? '')) || ''),
+      };
       setMessages((prev) => [
         ...prev,
         { role: 'user', content: input },
-        data.message as ChatMessage,
+        assistantMsg,
       ]);
       setInput('');
     } catch (e: any) {

@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
   try {
-    const { prompt, messages, model = Deno.env.get('OPENAI_MODEL') || 'gpt-3.5-turbo', temperature = 0.7, max_tokens = 512, baseURL } = await req.json() as Body;
+    const { prompt, messages, model, temperature = 0.7, max_tokens = 512, baseURL } = await req.json() as Body;
 
     const finalMessages = messages && messages.length ? messages : [
       { role: 'user', content: prompt || 'Hello' }
@@ -45,21 +45,11 @@ Deno.serve(async (req) => {
       max_tokens,
     });
 
-    // 根据 OPENAI_MODE 决定返回格式
-    const mode = Deno.env.get('OPENAI_MODE') || 'default';
-    let responseData: any = {
+    return new Response(JSON.stringify({
       text: response.choices?.[0]?.message?.content ?? '',
       id: response.id,
       usage: response.usage,
-    };
-    if (mode === 'verbose') {
-      responseData = {
-        ...responseData,
-        object: response.object,
-      };
-    }
-
-    return new Response(JSON.stringify(responseData), {
+    }), {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',
