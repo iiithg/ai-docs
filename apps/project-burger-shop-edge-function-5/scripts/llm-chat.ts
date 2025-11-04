@@ -9,8 +9,10 @@ const corsHeaders = {
   'Access-Control-Max-Age': '86400',
 };
 
-const openai = new OpenAI({
-  apiKey: Deno.env.get('OPENAI_API_KEY') || ''
+// 默认 OpenAI 客户端，使用环境变量配置
+const createOpenAIClient = (baseURL?: string) => new OpenAI({
+  apiKey: Deno.env.get('OPENAI_API_KEY') || '',
+  baseURL: baseURL || Deno.env.get('OPENAI_API_BASE_URL') || undefined
 });
 
 interface Body {
@@ -19,6 +21,7 @@ interface Body {
   model?: string;
   temperature?: number;
   max_tokens?: number;
+  baseURL?: string;
 }
 
 Deno.serve(async (req) => {
@@ -26,24 +29,37 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
   try {
-    const { prompt, messages, model = 'gpt-3.5-turbo', temperature = 0.7, max_tokens = 512 } = await req.json() as Body;
+    const { prompt, messages, model = Deno.env.get('OPENAI_MODEL') || 'gpt-3.5-turbo', temperature = 0.7, max_tokens = 512, baseURL } = await req.json() as Body;
 
     const finalMessages = messages && messages.length ? messages : [
       { role: 'user', content: prompt || 'Hello' }
     ];
 
-    const response = await openai.chat.completions.create({
+    // 创建动态 OpenAI 客户端，支持请求级别的 baseURL
+    const client = createOpenAIClient(baseURL);
+
+    const response = await client.chat.completions.create({
       model,
       messages: finalMessages,
       temperature,
       max_tokens,
     });
 
-    return new Response(JSON.stringify({
+    // 根据 OPENAI_MODE 决定返回格式
+    const mode = Deno.env.get('OPENAI_MODE') || 'default';
+    let responseData: any = {
       text: response.choices?.[0]?.message?.content ?? '',
       id: response.id,
       usage: response.usage,
-    }), {
+    };
+    if (mode === 'verbose') {
+      responseData = {
+        ...responseData,
+        object: response.object,
+      };
+    }
+
+    return new Response(JSON.stringify(responseData), {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',
