@@ -1,18 +1,39 @@
-# Project Burger Shop — AI & Email (Edge Functions)
+# Project Burger Shop Edge Functions - 5
 
-本项目的前端演示三类 Supabase Edge Functions 能力：
-- LLM Chat（OpenAI 兼容 Chat Completions）
-- Send Emails（邮件队列/模板）
-- Text→Image（OpenAI 兼容上游）
+🍔 **AI Chat, Email & Text-to-Image** - Comprehensive Edge Functions demo with LLM integration, email services, and image generation
 
-路径：`apps/project-burger-shop-edge-function-5`
+This project demonstrates **Supabase Edge Functions** capabilities with three serverless functions: AI-powered chat using OpenAI-compatible APIs, email service with templates, and text-to-image generation, showcasing modern serverless architecture patterns.
 
-## 1) 前置准备
+## 🚀 Features
 
-- Node.js 18+
-- 你自己的 Supabase 项目（将在 Dashboard 里创建并部署 Edge Functions）
+### Supabase Edge Functions Integration
+This project showcases the following **Supabase features**:
 
-## 2) 安装与本地运行（仅前端）
+- **⚡ Serverless Functions**: Deno runtime with TypeScript support
+- **🤖 LLM Chat Integration**: OpenAI-compatible chat completions
+- **📧 Email Service**: Template-based email sending with queue support
+- **🎨 Text-to-Image**: AI-powered image generation
+- **🔐 JWT Authentication**: Optional token-based function security
+- **🌐 CORS Support**: Built-in cross-origin request handling
+- **⚙️ Dynamic Configuration**: Runtime endpoint configuration via UI
+
+### Application Features
+- **💬 AI Chat Interface**: Real-time conversations with customizable models
+- **📨 Email Templates**: Professional email composition and delivery
+- **🖼️ Image Generation**: Create images from text prompts
+- **🎛️ Function Testing**: Built-in testing interface for all functions
+- **📱 Responsive Design**: Works seamlessly on all devices
+- **🔧 Custom Endpoints**: Override default function URLs for testing
+
+## 🛠️ Prerequisites
+
+- **Node.js 18+** - Required for development
+- **Supabase Project** - For Edge Functions deployment
+- **API Keys** - OpenAI API key for LLM chat, image generation service key
+
+## 🏃‍♂️ Quick Start
+
+### 1. Frontend Setup
 
 ```bash
 cd apps/project-burger-shop-edge-function-5
@@ -20,61 +41,209 @@ npm install
 npm run dev
 ```
 
-在右上角 Settings 中填写：
-- `Supabase URL`：例如 `https://YOUR-PROJECT.supabase.co`
-- `Anon Key`：项目匿名密钥
-- 若你的函数启用了鉴权验证，可在 `Access Token` 粘贴用户 JWT（前端会自动带上 `Authorization: Bearer ...`）。
+Open `http://localhost:3000` and configure settings in the top-right corner:
+- **Supabase URL**: `https://YOUR-PROJECT.supabase.co`
+- **Anon Key**: Your project's anonymous key
+- **Access Token**: Optional JWT for authenticated functions
 
-也可在 `.env.local` 设置：
+### 2. Environment Variables (Optional)
+
+Create `.env.local` file:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-## 3) Supabase Functions 部署（重要）
+## 🔧 Edge Functions Deployment
 
-在 Supabase Dashboard → Functions 创建并部署以下 3 个函数（将本仓库 `scripts/` 目录下同名文件完整复制过去）：
-- `llm-chat` → `scripts/llm-chat.ts`
-- `send-email` → `scripts/send-email.ts`
-- `txt2img` → `scripts/txt2img.ts`
+### Step 1: Create Functions in Supabase Dashboard
 
-为每个函数在 Dashboard → Functions → Settings 配置环境变量：
-- `llm-chat`：`OPENAI_API_KEY`
-- `send-email`：`SUPABASE_URL`、`SUPABASE_SERVICE_ROLE_KEY`
-- `txt2img`：`NANOBANANA_API_KEY`（可选 `NANOBANANA_API_URL`）
+1. Navigate to **Supabase Dashboard** → **Functions**
+2. Create the following three functions:
+   - **`llm-chat`** - Copy from `scripts/llm-chat.ts`
+   - **`send-email`** - Copy from `scripts/send-email.ts`
+   - **`txt2img`** - Copy from `scripts/txt2img.ts`
 
-模板代码已内置 CORS（包含 OPTIONS 预检与跨域响应头），前端可直接调用。
+### Step 2: Configure Environment Variables
 
-### 关于 Verify JWT with legacy secret（务必确认）
-- 含义：要求请求头 `Authorization` 携带由“legacy JWT secret（旧密钥）”签名的 JWT。由于项目的 anon key 也是一个易获得的 JWT，启用该选项后，使用 anon key 也可能满足校验。
-- 推荐：关闭（OFF）。建议在函数内部实现更细粒度的鉴权与授权逻辑（例如校验用户身份、角色、白名单或签名），而不是依赖 legacy secret 校验。
-- 若你确实开启，则前端必须携带 `Authorization: Bearer <token>`。本项目的 Settings 已提供 Access Token 输入框，保存后将自动附带。
+For each function, set these environment variables in **Functions → Settings**:
 
-完成上述步骤后，请先在 Dashboard 内直接“运行/测试”每个函数，确认 200 响应并返回预期数据，再回到前端页面调试。
+#### `llm-chat` Function
+```bash
+OPENAI_API_KEY=your-openai-api-key
+```
 
-## 4) 前端页面与接口
+#### `send-email` Function
+```bash
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
 
-- LLM Chat（`/functions/v1/llm-chat`）
-  - body：`{ messages | prompt, model, temperature, max_tokens }`
-- Send Emails（`/functions/v1/send-email`）
-  - body：`{ to, subject|templateName, templateData }`
-- Text→Image（`/functions/v1/txt2img`）
-  - body：`{ prompt, model }`
+#### `txt2img` Function
+```bash
+NANOBANANA_API_KEY=your-nanobanana-api-key
+NANOBANANA_API_URL=https://api.nanobanana.com/v1 (optional)
+```
 
-每个页面都提供“自定义 Endpoint URL（可选）”输入框，便于你临时指向任意已部署的函数（例如 `.../functions/v1/dynamic-endpoint`）。
+### Step 3: Authentication Configuration
 
-## 5) 常见问题
+**Important**: Set **"Verify JWT with legacy secret"** to **OFF** in function settings.
 
-- `TypeError: Failed to fetch`
-  - 通常是 CORS 预检失败或缺少 `apikey`/`Authorization` 请求头。
-  - 解决：确保函数代码包含 CORS 头；在前端 Settings 保存 Anon Key（自动附加 `apikey`）；若函数启用鉴权，提供 Access Token。
-  - DevTools → Network 检查 `OPTIONS` 与 `POST` 响应是否包含 `Access-Control-Allow-Origin`。
+**Why**: We recommend implementing fine-grained authentication within your functions rather than relying on legacy JWT verification.
 
-- `401 Missing authorization header`
-  - 你的函数要求 `Authorization`，但前端未附带。
-  - 在 Settings 粘贴 Access Token（JWT）；或关闭函数的强校验；或在函数内部放宽逻辑（仅限测试）。
+### Step 4: Test Functions
 
-- Text→Image 显示重复图片
-  - 上游可能同时返回 Markdown 与原始 `data:image`；前端已做去重处理。
+Before using the frontend:
+1. Use the **"Run/Test"** button in Supabase Dashboard
+2. Verify each function returns `200 OK` responses
+3. Check that responses match expected formats
+
+## 📁 Project Structure
+
+### Frontend Application
+- **`app/llm-chat/page.tsx`** — AI chat interface
+- **`app/send-email/page.tsx`** — Email composition and testing
+- **`app/txt2img/page.tsx`** — Text-to-image generation
+- **`components/Settings.tsx`** — Dynamic configuration panel
+
+### Edge Functions (scripts/)
+- **`scripts/llm-chat.ts`** — OpenAI-compatible chat completions
+- **`scripts/send-email.ts`** — Email service with template support
+- **`scripts/txt2img.ts`** — Image generation API integration
+
+## 🎯 API Endpoints
+
+### LLM Chat
+```
+POST /functions/v1/llm-chat
+Content-Type: application/json
+Authorization: Bearer <optional-jwt>
+
+{
+  "messages": [{"role": "user", "content": "Hello!"}],
+  "model": "gpt-3.5-turbo",
+  "temperature": 0.7,
+  "max_tokens": 1000
+}
+```
+
+### Send Email
+```
+POST /functions/v1/send-email
+Content-Type: application/json
+Authorization: Bearer <optional-jwt>
+
+{
+  "to": "user@example.com",
+  "templateName": "welcome",
+  "templateData": {"name": "John", "amount": 100}
+}
+```
+
+### Text to Image
+```
+POST /functions/v1/txt2img
+Content-Type: application/json
+Authorization: Bearer <optional-jwt>
+
+{
+  "prompt": "A cute burger shop with happy customers",
+  "model": "dall-e-3"
+}
+```
+
+## 🛡️ Authentication & Security
+
+### Function Authentication Options
+
+1. **Public Functions** - No authentication required
+2. **JWT Verification** - Verify Supabase JWT tokens
+3. **Custom Logic** - Implement your own auth rules
+
+### Security Best Practices
+
+- **Never expose service role keys** in client-side code
+- **Use environment variables** for sensitive configuration
+- **Implement rate limiting** for production functions
+- **Validate all inputs** before processing
+- **Use HTTPS** for all function calls
+
+## ⚠️ Troubleshooting
+
+### Common Issues
+
+**`TypeError: Failed to fetch`**
+- **Cause**: CORS preflight failure or missing authentication headers
+- **Solution**:
+  - Ensure functions include proper CORS headers
+  - Save Anon Key in frontend Settings (auto-appends `apikey`)
+  - If using JWT auth, provide Access Token in Settings
+  - Check Network tab for OPTIONS/POST responses
+
+**`401 Missing authorization header`**
+- **Cause**: Function requires authentication but none provided
+- **Solution**:
+  - Add JWT token in Settings Access Token field
+  - Disable function's "Verify JWT with legacy secret" option
+  - Or implement custom auth logic in the function
+
+**Text-to-Image Duplicate Images**
+- **Cause**: API returns both Markdown and raw `data:image` formats
+- **Solution**: Frontend automatically deduplicates and displays unique images
+
+**Function Not Responding**
+- **Check**: Function is deployed and active in Supabase Dashboard
+- **Verify**: Environment variables are correctly set
+- **Test**: Use Supabase Dashboard's built-in function tester
+- **Monitor**: Check function logs for error messages
+
+### Debug Mode
+
+Enable detailed logging by checking browser DevTools:
+1. Open **Network** tab
+2. Examine function requests and responses
+3. Check **Console** for application logs
+4. Review Supabase Dashboard → Functions → Logs
+
+## 🔧 Customization
+
+### Adding New Functions
+
+1. Create new TypeScript file in `scripts/`
+2. Implement function with proper CORS headers
+3. Deploy via Supabase Dashboard
+4. Add frontend interface in `app/` directory
+
+### Custom Email Templates
+
+Add new templates in `send-email` function:
+
+```typescript
+const templates = {
+  'custom-template': (data) => ({
+    subject: 'Custom Subject',
+    html: '<p>Custom HTML content with {{variables}}</p>',
+    text: 'Custom text content'
+  })
+}
+```
+
+### Model Configuration
+
+Customize AI models by modifying function environment variables:
+- **OpenAI Models**: `gpt-4`, `gpt-3.5-turbo`, etc.
+- **Temperature**: Control response creativity (0.0-1.0)
+- **Max Tokens**: Limit response length
+
+## 📚 Further Learning
+
+- [Supabase Edge Functions Documentation](https://supabase.com/docs/guides/functions)
+- [Deno Runtime Guide](https://deno.land/runtime)
+- [OpenAI API Documentation](https://platform.openai.com/docs)
+- [CORS Guide](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
+
+---
+
+**🎉 Advanced Edge Functions Demo - showcasing production-ready serverless capabilities!**
 

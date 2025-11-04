@@ -1,41 +1,48 @@
-# project-burger-shop-auth-users-2 — Auth, Profiles, Wallet, Stock, Admin
+# Project Burger Shop Auth & Users - 2
 
-Auth + Users demo for the burger shop. Requires login to view items and buy. Stores user profile (name, birthday, avatar) and a per‑user wallet. Supports a one‑time welcome gift, per‑item stock with auto‑unlist at 0, and an admin page with email allowlist + role guard.
+🍔 **Complete Authentication & User Management System** - Advanced burger shop with profiles, wallet, stock management, and admin controls
 
-## Features
+This project demonstrates a **complete authentication system** with Supabase Auth, featuring user profiles, wallet management, stock control, and role-based administration, showcasing production-ready user management patterns.
 
-- Supabase Auth (email/password): register, login, logout
-- Profiles table: `full_name`, `birthday`, `avatar_url`, `wallet_cents`, `welcome_claimed`
-- One‑time welcome gift via RPC `claim_welcome_bonus` (default ¥100.00)
-- Guarded purchase flow (visible and purchasable only when logged in)
-- Stocked menu: `menu_items.quantity` decrements per purchase; auto‑unlists at 0
-- Atomic purchase RPC `buy_burger`: decrement stock + deduct wallet + insert `orders`
-- “My Purchases” list (RPC `get_my_purchased_items`)
-- Admin page `/admin`: email allowlist (default `physicoada@gmail.com`, override with `NEXT_PUBLIC_ADMIN_EMAILS`) + role `profiles.role='admin'`; only admins can write `menu_items`
+## 🚀 Features
 
-## Setup
+### Supabase Authentication Integration
+This project showcases the following **Supabase features**:
 
+- **🔐 Complete Auth System**: Email/password registration, login, logout
+- **👤 User Profiles**: Extended profiles with personal information
+- **💳 Wallet System**: Per-user digital wallet with balance management
+- **🎁 Welcome Bonus**: One-time gift for new users via RPC
+- **🛒 Purchase Flow**: Guarded checkout with stock management
+- **📦 Inventory Control**: Automatic stock tracking and depletion
+- **👑 Role-Based Access**: Admin controls with email allowlist
+- **⚡ Dynamic Configuration**: Runtime Supabase configuration via UI
+
+### Application Features
+- **📋 Complete User Management**: Registration, login, profile management
+- **💰 Digital Wallet**: Balance tracking, deposits, and purchases
+- **🎉 Welcome Rewards**: Automated bonus distribution for new users
+- **📊 Real-time Inventory**: Stock tracking with automatic unlisting
+- **🛡️ Secure Checkout**: Atomic purchase operations with wallet integration
+- **📜 Purchase History**: User-specific order tracking
+- **🔧 Admin Dashboard**: Menu management with access controls
+- **📱 Responsive Design**: Modern mobile-friendly interface
+
+## 🛠️ Quick Start
+
+### Option 1: Dynamic Configuration (Recommended)
+1. Start the application (see Run section below)
+2. Click the settings button (⚙️) in the top-right corner
+3. Enter your Supabase URL and Anon Key
+4. Settings are automatically saved to localStorage
+
+### Option 2: Environment Variables
 - Copy `.env.example` → `.env.local` and set:
   - `NEXT_PUBLIC_SUPABASE_URL`
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- Or click the in‑app ⚙️ to set URL/Key at runtime (stored in localStorage)
+  - `NEXT_PUBLIC_ADMIN_EMAILS` (optional, comma-separated admin emails)
 
-## Database (SQL)
-
-Run exactly one file: `apps/project-burger-shop-auth-users-2/scripts/init.sql` (copy all into Supabase SQL Editor, or run via psql).
-
-What `init.sql` includes
-- Extensions, tables (`menu_items` with `quantity`, `profiles` with `welcome_claimed`, `orders`), RLS policies
-- Triggers: `handle_new_user()` (wallet starts at 0; default allowlisted email becomes admin)
-- RPCs: `buy_burger`, `claim_welcome_bonus`, `get_my_purchased_items`
-- Seed: 16+ menu items across burgers/sides/drinks with initial stock
-- Backfill: auto‑create `profiles` for existing `auth.users`
-
-Important
-- Menu is readable only to authenticated users; guests won’t see the list.
-- Menu writes are protected by RLS; the UI also enforces an email allowlist (default `physicoada@gmail.com`, override via comma‑separated `NEXT_PUBLIC_ADMIN_EMAILS`).
-
-## Run
+## 🏃‍♂️ Run
 
 ```bash
 cd apps/project-burger-shop-auth-users-2
@@ -43,38 +50,161 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3001` (or your dev port):
-- `/auth` — register or login
-- `/shop` — after login: view items (available && stock > 0), claim welcome gift, buy items (auto‑refreshes stock and purchases)
-- `/admin` — menu CRUD for admins; non‑admins see access denied
+Open `http://localhost:3001`:
 
-## Files
+- **`/auth`** — Register or login to access the shop
+- **`/shop`** — Browse menu, claim welcome gift, make purchases
+- **`/admin`** — Admin controls for menu management (admin-only)
 
-- `app/shop/page.tsx` — Shop UI (login required; claim gift; buy; shows My Purchases)
-- `app/auth/*` — Auth pages
-- `app/admin/page.tsx` — Admin UI (email allowlist + role guard; stock support)
-- `lib/database.ts` — `menuItems` / `profiles` / `orders` (includes `getMyPurchases`)
-- `lib/types.ts` — Types: `MenuItem` / `Profile` / `BuyResult` / `PurchasedItem`
-- `scripts/init.sql` — Initialization (extensions / tables / RLS / RPCs / trigger / seeds / backfill)
+## 🗄️ Database Setup
 
-## Security
+### 🚀 One-time Initialization
 
-- RLS enabled on sensitive tables; `menu_items` readable only to authenticated users; admin writes only.
-- Never expose service role keys in the client; use only the anon key on the web.
+1. Open the Supabase Dashboard and select your project
+2. Go to SQL Editor → New query
+3. Copy the entire contents of `scripts/init.sql`
+4. Paste into the SQL Editor and click Run
 
-## Troubleshooting
+### What's Included in init.sql
 
-- Can’t see “Claim Welcome Gift” or see “Failed to load”: most likely missing `profiles` row or wrong project. Run `scripts/init.sql` on the exact project your app connects to (⚙️). The script includes a backfill for existing users.
-- “function not found (get_my_purchased_items)”: run the RPC section from `init.sql`, then `select pg_notify('pgrst','reload schema');`.
-- Seed says `quantity does not exist`: older table is missing the column. `init.sql` includes `alter table ... add column if not exists quantity ...`; run that then re‑seed.
+- **Extensions & Tables**: Complete schema with proper constraints
+  - `menu_items` with `quantity` column for stock tracking
+  - `profiles` with wallet and welcome bonus tracking
+  - `orders` for purchase history
+- **RLS Policies**: Row Level Security for data protection
+- **Triggers**: `handle_new_user()` for automated profile creation
+- **RPC Functions**: `buy_burger`, `claim_welcome_bonus`, `get_my_purchased_items`
+- **Seed Data**: 16+ menu items with initial stock levels
+- **Backfill**: Profile creation for existing auth.users
 
-## Test users (optional)
+### Important Security Notes
 
-- If you have a seeding flow for `auth.users`, `handle_new_user` will create matching `profiles` with wallet=0.
+- **Authentication Required**: Menu is only visible to authenticated users
+- **Role-Based Access**: Admin controls restricted to allowlisted emails
+- **Stock Management**: Automatic unlisting when quantity reaches 0
 
-## RLS
+## 📁 Project Structure
 
-- `profiles` and `orders` have RLS enabled by default.
-  - profiles: self read; restricted self update (name/birthday/avatar only); admins can update any profile.
-  - orders: self read; inserts via `buy_burger` RPC only.
-- `menu_items`: authenticated read; admin‑only writes.
+### Core Application Files
+- **`app/shop/page.tsx`** — Main shop interface with purchase flow
+- **`app/auth/*`** — Authentication pages (login, register)
+- **`app/admin/page.tsx`** — Admin dashboard with menu CRUD
+- **`lib/database.ts`** — Database service layer with business logic
+- **`lib/types.ts`** — TypeScript type definitions
+
+### Database Scripts
+- **`scripts/init.sql`** — Complete database initialization
+
+## 🎯 Technical Implementation
+
+### Database Schema
+
+#### profiles
+```sql
+- id: uuid (primary key, references auth.users)
+- full_name: text (user display name)
+- birthday: date (user birthday)
+- avatar_url: text (profile image URL)
+- wallet_cents: integer (wallet balance in cents)
+- welcome_claimed: boolean (welcome bonus status)
+- role: text (user/admin role assignment)
+- created_at/updated_at: timestamps
+```
+
+#### menu_items
+```sql
+- id: uuid (primary key)
+- name: text (item name)
+- description: text (item description)
+- price_cents: integer (price in cents)
+- category: text (burger/side/drink)
+- quantity: integer (stock count)
+- available: boolean (visibility status)
+- created_at/updated_at: timestamps
+```
+
+#### orders
+```sql
+- id: uuid (primary key)
+- user_id: uuid (references profiles.id)
+- menu_item_id: uuid (references menu_items.id)
+- quantity: integer (items purchased)
+- price_cents: integer (total price)
+- created_at: timestamp
+```
+
+### Key Features Implementation
+
+#### Wallet System
+- **Initial Balance**: New users start with ¥0
+- **Welcome Bonus**: ¥100.00 one-time gift via `claim_welcome_bonus` RPC
+- **Atomic Operations**: Wallet updates using database transactions
+
+#### Stock Management
+- **Per-Item Tracking**: Each menu item has quantity field
+- **Auto-Depletion**: Stock decrements with each purchase
+- **Auto-Unlisting**: Items become unavailable when quantity = 0
+
+#### Purchase Flow
+- **Security**: Only authenticated users can view/purchase
+- **Atomic Operations**: `buy_burger` RPC handles everything atomically
+  - Decrements menu item stock
+  - Deducts from user wallet
+  - Creates order record
+- **Error Handling**: Comprehensive validation and rollback
+
+#### Admin System
+- **Email Allowlist**: Default `physicoada@gmail.com`, configurable via env
+- **Role Guards**: Only users with `profiles.role='admin'` can access admin features
+- **Menu CRUD**: Create, read, update, delete menu items
+- **Stock Management**: Adjust inventory levels
+
+## ⚠️ Troubleshooting
+
+### Common Issues
+
+**"Failed to load" or "Claim Welcome Gift" not visible**
+- **Cause**: Missing `profiles` row or wrong project connection
+- **Solution**: Run `scripts/init.sql` on the exact project your app connects to
+- **Note**: Script includes backfill for existing users
+
+**"Function not found (get_my_purchased_items)"**
+- **Cause**: RPC functions not properly created
+- **Solution**: Run the RPC section from `init.sql`
+- **Follow-up**: Execute `select pg_notify('pgrst','reload schema');`
+
+**"Column 'quantity' does not exist"**
+- **Cause**: Using old table structure without quantity column
+- **Solution**: Run `init.sql` which includes `alter table ... add column if not exists quantity`
+
+### Authentication Issues
+
+**Can't access shop after login**
+- **Check**: User profile exists in `profiles` table
+- **Verify**: JWT token is valid and not expired
+- **Test**: Try refreshing the page after login
+
+**Admin access denied**
+- **Check**: User email is in admin allowlist
+- **Verify**: User has `role='admin'` in profiles table
+- **Configure**: Set `NEXT_PUBLIC_ADMIN_EMAILS` environment variable
+
+## 🔒 Security Features
+
+### Row Level Security (RLS)
+- **profiles**: Self-read, restricted self-update, admin full access
+- **orders**: Self-read, insert-only via `buy_burger` RPC
+- **menu_items**: Authenticated read, admin-only writes
+
+### Best Practices
+- **Never expose service role keys** in client-side code
+- **Always validate user permissions** before operations
+- **Use atomic transactions** for financial operations
+- **Implement proper error handling** with user feedback
+
+## 📚 Further Learning
+
+- [Supabase Auth Documentation](https://supabase.com/docs/guides/auth)
+- [Row Level Security Guide](https://supabase.com/docs/guides/auth/row-level-security)
+- [Database Functions Documentation](https://supabase.com/docs/guides/database/functions)
+
