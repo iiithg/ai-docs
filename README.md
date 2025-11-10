@@ -2,19 +2,31 @@
 
 A collection of simple demos demonstrating the basic features of Supabase using a burger shop theme. Each project focuses on specific Supabase features and can be run independently.
 
+## 🎯 About This Project
+
+This repository is designed to provide a hands-on learning experience for developers looking to get started with Supabase. Each demo is a self-contained Next.js application that showcases a specific feature, from basic CRUD operations to more advanced topics like real-time subscriptions and edge functions.
+
+**Tech Stack:**
+
+- [Next.js](https://nextjs.org/)
+- [Supabase](https://supabase.io/)
+- [Tailwind CSS](https://tailwindcss.com/)
+
 ## 🏗️ Project Structure
 
 ```
 Project5-Supabase-Demos/
 ├── apps/
-│   ├── burger-template/                    # Base Next.js template, no database required
-│   ├── project-burger-shop-menu-crud-1/    # Menu items CRUD operations
-│   ├── project-burger-shop-auth-users-2/   # Authentication, profiles, wallet system
-│   ├── project-burger-shop-realtime-orders-3/ # Realtime chat and presence
-│   ├── project-burger-shop-storage-uploads-4/ # File storage for avatars
-│   └── project-burger-shop-edge-function-5/  # Edge function demos
-├── docs/                                    # Documentation and tutorials
-└── CLAUDE.md                               # Development guidelines for Claude Code
+│   ├── burger-template/                           # Base Next.js template, no database required
+│   ├── project-burger-shop-menu-crud-1/           # Menu items CRUD operations
+│   ├── project-burger-shop-auth-users-2/          # Authentication, profiles, wallet system
+│   ├── project-burger-shop-realtime-orders-3/    # Realtime chat and presence
+│   ├── project-burger-shop-storage-uploads-4/    # File storage for avatars
+│   ├── project-burger-shop-edge-function-5/     # Edge function demos
+│   ├── project-burger-shop-auth-advanced-supabase-6/ # Advanced Auth with Supabase
+│   └── project-burger-shop-auth-advanced-clerk-7/    # Advanced Auth with Clerk
+├── docs/                                           # Documentation and tutorials
+└── CLAUDE.md                                      # Development guidelines for Claude Code
 ```
 
 ## 🚀 Quick Start
@@ -183,6 +195,50 @@ npm run dev
 - Weather integration examples
 - Server-side processing capabilities
 
+---
+
+### 7. project-burger-shop-auth-advanced-supabase-6
+**Advanced authentication with Supabase**
+
+```bash
+cd apps/project-burger-shop-auth-advanced-supabase-6
+npm install
+
+# Environment Setup
+cp .env.example .env.local
+# Edit .env.local with your Supabase credentials
+
+npm run dev
+```
+
+**Features:**
+- Advanced authentication flows
+- Social logins (Google, GitHub, etc.)
+- Multi-factor authentication (MFA)
+- Row-level security (RLS) policies
+
+---
+
+### 8. project-burger-shop-auth-advanced-clerk-7
+**Advanced authentication with Clerk**
+
+```bash
+cd apps/project-burger-shop-auth-advanced-clerk-7
+npm install
+
+# Environment Setup
+cp .env.example .env.local
+# Edit .env.local with your Clerk credentials
+
+npm run dev
+```
+
+**Features:**
+- Integration with Clerk for authentication
+- Pre-built UI components for login, signup, and user profiles
+- Organization and multi-tenancy support
+- Seamless session management
+
 ## 🛠️ Development Workflow
 
 ### Prerequisites
@@ -253,19 +309,30 @@ Reference: https://help.aliyun.com/zh/polardb/polardb-for-postgresql/polardb-sup
 
 ## 📚 Learning Path
 
-Recommended order for learning Supabase features:
+We recommend following this order to get the most out of these demos:
 
-1. **burger-template** - Basic Next.js setup and UI components
-2. **project-burger-shop-menu-crud-1** - Database basics and CRUD operations
-3. **project-burger-shop-auth-users-2** - Authentication and row-level security
-4. **project-burger-shop-realtime-orders-3** - Realtime subscriptions
-5. **project-burger-shop-storage-uploads-4** - File storage and uploads
-6. **project-burger-shop-edge-function-5** - Edge functions and serverless logic
+1.  **burger-template**: Get familiar with the basic Next.js setup and UI components.
+2.  **project-burger-shop-menu-crud-1**: Learn the fundamentals of database interactions with Supabase.
+3.  **project-burger-shop-auth-users-2**: Dive into authentication and user management.
+4.  **project-burger-shop-realtime-orders-3**: Explore the power of real-time applications.
+5.  **project-burger-shop-storage-uploads-4**: Understand how to manage file storage.
+6.  **project-burger-shop-edge-function-5**: Get started with serverless logic.
+7.  **project-burger-shop-auth-advanced-supabase-6**: Explore advanced authentication patterns with Supabase.
+8.  **project-burger-shop-auth-advanced-clerk-7**: Learn how to integrate a third-party auth provider like Clerk.
 
 ## 🤝 Contributing
 
-This repository is designed for educational purposes. Each app demonstrates specific Supabase features in isolation to make learning easier and more focused.
+Contributions are welcome! If you have an idea for a new demo or an improvement to an existing one, please feel free to open an issue or submit a pull request.
+
+### How to Contribute
+
+1.  Fork the repository.
+2.  Create a new branch (`git checkout -b feature/your-feature`).
+3.  Make your changes.
+4.  Commit your changes (`git commit -m 'Add some feature'`).
+5.  Push to the branch (`git push origin feature/your-feature`).
+6.  Open a pull request.
 
 ## 📄 License
 
-This project is for educational and demonstration purposes.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
