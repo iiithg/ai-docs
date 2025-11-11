@@ -5,7 +5,16 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 // Create a Supabase client that attaches Clerk's session token to every request.
 export function useSupabaseWithClerk(): SupabaseClient {
-  const { getToken } = useAuth();
+  let getToken: (() => Promise<string | null>) | null = null;
+  
+  // Try to get Clerk auth token, but handle case where ClerkProvider is not available
+  try {
+    const auth = useAuth();
+    getToken = auth.getToken;
+  } catch (error) {
+    // If useAuth fails (no ClerkProvider), we'll create a client without token
+    getToken = async () => null;
+  }
 
   let url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   let key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -25,9 +34,9 @@ export function useSupabaseWithClerk(): SupabaseClient {
   // Memoize to avoid creating a new client on every render
   const client = useMemo(() => {
     return createClient(url, key, {
-      accessToken: async () => (await getToken()) ?? null,
+      accessToken: getToken,
     });
-  }, [url, key]);
+  }, [url, key, getToken]);
 
   return client;
 }
