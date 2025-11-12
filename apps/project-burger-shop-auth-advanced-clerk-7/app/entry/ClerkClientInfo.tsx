@@ -23,9 +23,9 @@ function ClerkInner() {
   const email = user.primaryEmailAddress?.emailAddress;
   return (
     <div className="rounded border bg-white p-4">
-      <div className="font-semibold">恭喜你加入, 你的名字是 {name}</div>
+      <div className="font-semibold">Welcome, your name is {name}</div>
       {email && <div className="text-sm text-neutral-600 mt-1">email: {email}</div>}
-      <div className="text-xs text-neutral-500 mt-1">通过 Clerk 登录 (客户端)</div>
+      <div className="text-xs text-neutral-500 mt-1">Signed in via Clerk (client)</div>
     </div>
   );
 }

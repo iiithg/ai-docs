@@ -28,7 +28,7 @@ export function useSupabaseWithClerk(): SupabaseClient {
   }
 
   if (!url || !key) {
-    throw new Error('Supabase URL/Key missing. 请在右上角⚙️ Settings中配置或在 .env.local 中添加 NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY');
+    throw new Error('Supabase URL/Key missing. Please configure in ⚙️ Settings above or add NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local');
   }
 
   // Memoize to avoid creating a new client on every render

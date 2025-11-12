@@ -1,9 +1,9 @@
--- Clerk 用户同步数据库表结构
--- 这个脚本创建用于存储从 Clerk webhook 同步过来的用户和组织数据的表
+-- Clerk user sync database schema
+-- This script creates tables for storing user and organization data synced from Clerk webhooks
 
--- 用户表 - 存储从 Clerk 同步的用户信息
+-- Users table - stores user information synced from Clerk
 CREATE TABLE IF NOT EXISTS users (
-  id TEXT PRIMARY KEY,  -- Clerk 用户 ID
+  id TEXT PRIMARY KEY,  -- Clerk user ID
   first_name TEXT,
   last_name TEXT,
   username TEXT,
@@ -13,18 +13,18 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at TIMESTAMP WITH TIME ZONE
 );
 
--- 组织表 - 存储从 Clerk 同步的组织信息
+-- Organizations table - stores organization information synced from Clerk
 CREATE TABLE IF NOT EXISTS organizations (
-  id TEXT PRIMARY KEY,  -- Clerk 组织 ID
+  id TEXT PRIMARY KEY,  -- Clerk organization ID
   name TEXT NOT NULL,
   slug TEXT,
   created_at TIMESTAMP WITH TIME ZONE,
   updated_at TIMESTAMP WITH TIME ZONE
 );
 
--- 组织成员关系表 - 存储用户与组织的成员关系
+-- Organization memberships table - stores user-organization membership relationships
 CREATE TABLE IF NOT EXISTS organization_memberships (
-  id TEXT PRIMARY KEY,  -- Clerk 成员关系 ID
+  id TEXT PRIMARY KEY,  -- Clerk membership ID
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
   role TEXT NOT NULL, -- 'admin', 'member', etc.
@@ -32,32 +32,32 @@ CREATE TABLE IF NOT EXISTS organization_memberships (
   updated_at TIMESTAMP WITH TIME ZONE
 );
 
--- 创建索引以提高查询性能
+-- Create indexes to improve query performance
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email_address);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_organization_memberships_user_id ON organization_memberships(user_id);
 CREATE INDEX IF NOT EXISTS idx_organization_memberships_org_id ON organization_memberships(organization_id);
 
--- 添加注释说明表的用途
-COMMENT ON TABLE users IS '从 Clerk webhook 同步的用户数据';
-COMMENT ON TABLE organizations IS '从 Clerk webhook 同步的组织数据';
-COMMENT ON TABLE organization_memberships IS '从 Clerk webhook 同步的组织成员关系数据';
+-- Add table comments to explain their purpose
+COMMENT ON TABLE users IS 'User data synced from Clerk webhooks';
+COMMENT ON TABLE organizations IS 'Organization data synced from Clerk webhooks';
+COMMENT ON TABLE organization_memberships IS 'Organization membership data synced from Clerk webhooks';
 
--- 启用 RLS (Row Level Security)
+-- Enable RLS (Row Level Security)
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE organization_memberships ENABLE ROW LEVEL SECURITY;
 
--- 创建基本的 RLS 策略（开发环境）
--- 用户只能读取自己的信息
+-- Create basic RLS policies (development environment)
+-- Users can only view their own information
 CREATE POLICY "Users can view own profile" ON users
   FOR SELECT USING (auth.uid()::text = id);
 
--- 认证用户可以读取所有用户信息（用于用户列表等功能）
+-- Authenticated users can view all user information (for user list features, etc.)
 CREATE POLICY "Authenticated users can view all users" ON users
   FOR SELECT USING (auth.role() = 'authenticated');
 
--- 组织成员可以查看自己所属的组织
+-- Organization members can view their organization
 CREATE POLICY "Organization members can view organization" ON organizations
   FOR SELECT USING (
     id IN (
@@ -67,7 +67,7 @@ CREATE POLICY "Organization members can view organization" ON organizations
     )
   );
 
--- 组织成员可以查看其他成员信息
+-- Organization members can view membership information
 CREATE POLICY "Organization members can view memberships" ON organization_memberships
   FOR SELECT USING (
     user_id = auth.uid()::text OR
@@ -78,7 +78,7 @@ CREATE POLICY "Organization members can view memberships" ON organization_member
     )
   );
 
--- 创建用于更新时间戳的函数
+-- Create function for updating timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -87,7 +87,7 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- 为表添加更新时间戳的触发器
+-- Add timestamp update triggers to tables
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

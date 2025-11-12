@@ -44,7 +44,7 @@ export default function EntryClientFallback() {
   if (error || !name) return null;
   return (
     <div className="rounded border bg-white p-4">
-      <div className="font-semibold">恭喜你加入, 你的名字是 {name}</div>
+      <div className="font-semibold">Welcome, your name is {name}</div>
       {userId && <div className="text-sm text-neutral-600 mt-1">id: {userId}</div>}
       {email && <div className="text-sm text-neutral-600">email: {email}</div>}
     </div>

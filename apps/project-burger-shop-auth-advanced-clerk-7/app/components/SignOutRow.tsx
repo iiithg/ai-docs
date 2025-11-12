@@ -1,38 +1,9 @@
 "use client";
-import { useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-function SignOutButton() {
-  const { signOut } = useClerk();
-  const router = useRouter();
-  const [msg, setMsg] = useState<string | null>(null);
-  
-  async function onClick() {
-    try {
-      await signOut();
-      router.push('/clerk/login');
-    } catch (e: any) {
-      setMsg(e?.message || '退出登录失败');
-    }
-  }
-
-  function clearSettings() {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('clerk_publishable_key');
-      setMsg('已清除本地设置。');
-    }
-  }
-
-  return (
-    <div className="flex flex-wrap gap-2">
-      <button onClick={onClick} className="px-3 py-2 rounded border">退出登录</button>
-      <button onClick={clearSettings} className="px-3 py-2 rounded border">清除设置 (⚙️)</button>
-    </div>
-  );
-}
-
 export default function SignOutRow() {
+  const router = useRouter();
   const [hasClerkProvider, setHasClerkProvider] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -45,32 +16,33 @@ export default function SignOutRow() {
     setHasClerkProvider(Boolean(key));
   }, []);
 
-  function clearSettings() {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('clerk_publishable_key');
-      setMsg('已清除本地设置。');
+  async function onClick() {
+    try {
+      // Check if Clerk is available in window
+      if (typeof window !== 'undefined' && (window as any).Clerk) {
+        await (window as any).Clerk.signOut();
+        router.push('/clerk/login');
+      } else {
+        setMsg('Clerk is not loaded');
+      }
+    } catch (e: any) {
+      setMsg(e?.message || 'Sign out failed');
     }
   }
 
-  // 如果没有 Clerk 提供者，只显示清除设置按钮
+  // If no Clerk provider, show no content
   if (!hasClerkProvider) {
-    return (
-      <div className="mt-6 rounded border bg-white p-4 text-sm">
-        <div className="font-semibold mb-2">会话和设置</div>
-        {msg && <div className="mb-2 rounded border border-yellow-200 bg-yellow-50 p-2 text-yellow-800">{msg}</div>}
-        <div className="flex flex-wrap gap-2">
-          <button onClick={clearSettings} className="px-3 py-2 rounded border">清除设置 (⚙️)</button>
-        </div>
-      </div>
-    );
+    return null;
   }
 
-  // 有 Clerk 提供者，显示完整的设置界面
+  // With Clerk provider, show full settings interface
   return (
     <div className="mt-6 rounded border bg-white p-4 text-sm">
-      <div className="font-semibold mb-2">会话和设置</div>
+      <div className="font-semibold text-sm text-neutral-800 mb-3">Session & Settings</div>
       {msg && <div className="mb-2 rounded border border-yellow-200 bg-yellow-50 p-2 text-yellow-800">{msg}</div>}
-      <SignOutButton />
+      <div className="flex gap-2">
+        <button onClick={onClick} className="px-3 py-2 rounded border">Sign Out</button>
+      </div>
     </div>
   );
 }

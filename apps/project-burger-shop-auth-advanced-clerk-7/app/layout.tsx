@@ -6,7 +6,7 @@ import SettingsMount from './components/SettingsMount';
 
 export const metadata: Metadata = {
   title: 'Clerk Auth — Burger Shop',
-  description: 'Clerk 登录演示（可选搭配 Supabase 数据访问）。'
+  description: 'Clerk login demo (optional with Supabase data access).'
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
