@@ -1,17 +1,24 @@
 "use client";
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
 import Settings from '../../components/Settings';
 import GoogleButton from '../../components/social-auth-buttons/GoogleButton';
 import AppleButton from '../../components/social-auth-buttons/AppleButton';
 import GitHubButton from '../../components/social-auth-buttons/GitHubButton';
 import { createBrowserClient } from '@/lib/supabase/client';
+import { AlertCircle, CheckCircle2, Settings as SettingsIcon, Github, Chrome, Smartphone, LogIn, UserPlus } from 'lucide-react';
 
 export default function LoginPage() {
   const [supabase, setSupabase] = useState<any>(null);
   const [supabaseUrl, setSupabaseUrl] = useState('');
   const [supabaseKey, setSupabaseKey] = useState('');
-  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const ready = useMemo(() => Boolean(supabase), [supabase]);
@@ -22,6 +29,8 @@ export default function LoginPage() {
   const [name, setName] = useState('');
   const [optionalInfo, setOptionalInfo] = useState('');
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [loading, setLoading] = useState(false);
+  const [session, setSession] = useState<any>(null);
   useEffect(() => {
     const client = createBrowserClient();
     setSupabase(client);
@@ -33,13 +42,21 @@ export default function LoginPage() {
       lsKey = localStorage.getItem('supabase_anon_key') || '';
     }
     setSupabaseUrl(lsUrl || process.env.NEXT_PUBLIC_SUPABASE_URL || '');
-    setSupabaseKey(lsKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '');    // Session listener
+    setSupabaseKey(lsKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '');
+    
+    // Auto redirect if already signed in
     if (client) {
-      client.auth.getSession().then(({ data }) => setAccessToken(data.session?.access_token ?? null));
-      const { data: sub } = client.auth.onAuthStateChange((_event, session) => {
-        setAccessToken(session?.access_token ?? null);
+      client.auth.getSession().then(({ data }) => {
+        if (data.session) {
+          setSession(data.session);
+          window.location.href = '/entry';
+        }
       });
-      return () => { sub.subscription.unsubscribe(); };
+
+      // Listen for auth changes
+      client.auth.onAuthStateChange((_event, session) => {
+        setSession(session);
+      });
     }
   }, []);
 
@@ -85,36 +102,31 @@ export default function LoginPage() {
     if (error) setErr(error.message); else setMessage('Signed out');
   }
 
-  async function callJwtEcho() {
-    setErr(null); setMessage(null);
-    if (!accessToken) { setErr('No access token'); return; }
-    const res = await fetch('/api/jwt-echo', { headers: { Authorization: `Bearer ${accessToken}` } });
-    const json = await res.json();
-    if (!res.ok) { setErr(json.error || 'Request failed'); return; }
-    setMessage(`Verified for sub=${json.sub}, exp=${json.exp}`);
-  }
+  const handleGoogleLogin = () => signInWith('google');
+  const handleGitHubLogin = () => signInWith('github');
+  const handleAppleLogin = () => signInWith('apple');
 
   async function emailSignIn() {
-    setErr(null); setMessage(null);
-    if (!supabase) { setErr('Supabase not ready'); return; }
-    if (!email || !password) { setErr('请输入邮箱与密码'); return; }
+    setErr(null); setMessage(null); setLoading(true);
+    if (!supabase) { setErr('Supabase not ready'); setLoading(false); return; }
+    if (!email || !password) { setErr('请输入邮箱与密码'); setLoading(false); return; }
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setErr(error.message); else setMessage('登录成功');
+    if (error) { setErr(error.message); setLoading(false); }
+    else { setMessage('登录成功'); setLoading(false); }
   }
 
   async function emailSignUp() {
-    setErr(null); setMessage(null);
-    if (!supabase) { setErr('Supabase not ready'); return; }
+    setErr(null); setMessage(null); setLoading(true);
+    if (!supabase) { setErr('Supabase not ready'); setLoading(false); return; }
     if (!email || !password || !name || !optionalInfo) {
-      setErr('注册需要填写：邮箱、密码、name、optional 信息（均为必填）');
-      return;
+      setErr('注册需要填写：邮箱、密码、name、optional 信息（均为必填）'); setLoading(false); return;
     }
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { name, optional_info: optionalInfo } }
     });
-    if (error) { setErr(error.message); return; }
+    if (error) { setErr(error.message); setLoading(false); return; }
     const userId = data.user?.id;
     try {
       if (userId) {
@@ -127,87 +139,196 @@ export default function LoginPage() {
         if (upsertErr) throw upsertErr;
       }
     } catch (e: any) {
-      setErr(`注册成功但写入资料失败: ${e.message || e}`);
-      return;
+      setErr(`注册成功但写入资料失败: ${e.message || e}`); setLoading(false); return;
     }
-    setMessage('注册成功，请前往邮箱验证（如开启）或直接访问受保护页面');
+    setMessage('注册成功，请前往邮箱验证（如开启）或直接访问受保护页面'); setLoading(false);
   }
 
   return (
-    <div className="mx-auto max-w-md">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Advanced Login</h1>
-        <p className="text-sm text-neutral-600">Google / GitHub OAuth + JWT protected API.</p>
-      </div>
-
-      {!ready && (
-        <div className="rounded border bg-yellow-50 text-yellow-800 p-3 text-sm mb-4">
-          未检测到 Supabase 配置。请点击右上角⚙️填写 <b>Supabase URL</b> 与 <b>Anon Key</b>，或在 .env.local 设置后重启。
-        </div>
-      )}
-
-      {err && <div className="mb-3 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{err}</div>}
-      {message && <div className="mb-3 rounded border border-green-200 bg-green-50 p-3 text-sm text-green-700">{message}</div>}
-
-      <div className="rounded-lg border bg-white p-4 space-y-4">
-        <div className="space-y-3">
-          <GoogleButton onClick={()=>signInWith('google')} disabled={!ready} />
-          <GitHubButton onClick={()=>signInWith('github')} disabled={!ready} />
-          <AppleButton onClick={()=>signInWith('apple')} disabled={!ready} />
-        </div>
-
-        <div className="flex items-center gap-2 text-xs text-neutral-500 select-none">
-          <div className="h-px flex-1 bg-neutral-200" />
-          <span>或使用邮箱</span>
-          <div className="h-px flex-1 bg-neutral-200" />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="font-semibold">邮箱登录 / 注册</div>
-          <div className="text-sm">
-            <button className={`px-2 py-1 rounded ${mode==='signin'?'bg-neutral-900 text-white':'border'}`} onClick={()=>setMode('signin')}>登录</button>
-            <button className={`ml-2 px-2 py-1 rounded ${mode==='signup'?'bg-neutral-900 text-white':'border'}`} onClick={()=>setMode('signup')}>注册</button>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <input value={email} onChange={(e)=>setEmail(e.target.value)} type="email" placeholder="邮箱" className="w-full px-3 py-2 border rounded" />
-          <input value={password} onChange={(e)=>setPassword(e.target.value)} type="password" placeholder="密码" className="w-full px-3 py-2 border rounded" />
-          {mode === 'signup' && (
-            <>
-              <input value={name} onChange={(e)=>setName(e.target.value)} placeholder="name（必填）" className="w-full px-3 py-2 border rounded" />
-              <input value={optionalInfo} onChange={(e)=>setOptionalInfo(e.target.value)} placeholder="optional 信息（必填）" className="w-full px-3 py-2 border rounded" />
-            </>
-          )}
-        </div>
-        {mode === 'signin' ? (
-          <button onClick={emailSignIn} disabled={!ready} className="w-full rounded bg-blue-600 text-white px-3 py-2 disabled:opacity-50">邮箱登录</button>
-        ) : (
-          <button onClick={emailSignUp} disabled={!ready} className="w-full rounded bg-green-600 text-white px-3 py-2 disabled:opacity-50">邮箱注册</button>
-        )}
-
-        <div className="pt-2">
-          <button onClick={signOut} disabled={!ready} className="w-full rounded bg-burger-red text-white px-3 py-2 disabled:opacity-50">Sign out</button>
-        </div>
-      </div>
-
-      <div className="mt-4 rounded-lg border bg-white p-4 text-sm">
-        <div className="font-semibold mb-2">Session</div>
-        <div className="break-all text-neutral-700">{accessToken ? `Access Token: ${accessToken}` : 'Not signed in'}</div>
-        <div className="mt-3 flex gap-2">
-          <button onClick={callJwtEcho} className="rounded bg-blue-600 text-white px-3 py-2">Call /api/jwt-echo</button>
-          <Link href="/entry" className="rounded bg-green-600 text-white px-3 py-2">Go to entry page →</Link>
-        </div>
-      </div>
-
-      <div className="mt-6">
-        <Settings
-          onSettingsChange={handleSettingsChange}
-          currentUrl={supabaseUrl}
-          currentKey={supabaseKey}
-          onClerkChange={handleClerkChange}
-          currentClerkKey={clerkPublishableKey}
-        />
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <Card className="shadow-lg border border-gray-200 bg-white">
+          <CardHeader className="space-y-1 pb-6">
+            <CardTitle className="text-2xl font-bold text-center text-gray-900">
+              Welcome Back
+            </CardTitle>
+            <CardDescription className="text-center text-gray-600">
+              Sign in to your account or create a new one
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="space-y-6">
+            <Tabs defaultValue="signin" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="signin" className="flex items-center gap-2">
+                  <LogIn className="w-4 h-4" />
+                  Sign In
+                </TabsTrigger>
+                <TabsTrigger value="signup" className="flex items-center gap-2">
+                  <UserPlus className="w-4 h-4" />
+                  Sign Up
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="signin" className="space-y-4 mt-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-email">Email</Label>
+                    <Input
+                      id="signin-email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-password">Password</Label>
+                    <Input
+                      id="signin-password"
+                      type="password"
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="h-11"
+                    />
+                  </div>
+                  <Button 
+                    onClick={emailSignIn} 
+                    disabled={loading}
+                    className="w-full h-11 bg-blue-600 hover:bg-blue-700"
+                  >
+                    {loading ? 'Signing in...' : 'Sign In'}
+                  </Button>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="signup" className="space-y-4 mt-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email</Label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">Password</Label>
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      placeholder="Create a password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-name">Name</Label>
+                    <Input
+                      id="signup-name"
+                      type="text"
+                      placeholder="Enter your name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-optional">Optional Info</Label>
+                    <Input
+                      id="signup-optional"
+                      type="text"
+                      placeholder="Additional information"
+                      value={optionalInfo}
+                      onChange={(e) => setOptionalInfo(e.target.value)}
+                      className="h-11"
+                    />
+                  </div>
+                  <Button 
+                    onClick={emailSignUp} 
+                    disabled={loading}
+                    className="w-full h-11 bg-green-600 hover:bg-green-700"
+                  >
+                    {loading ? 'Creating account...' : 'Create Account'}
+                  </Button>
+                </div>
+              </TabsContent>
+            </Tabs>
+            
+            {err && (
+              <Alert className="border-red-200 bg-red-50">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800">
+                  {err}
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {message && (
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  {message}
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            <div className="relative">
+              <Separator />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="bg-white px-3 text-sm text-gray-500">Or continue with</span>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <GoogleButton onClick={handleGoogleLogin} disabled={loading} />
+              <GitHubButton onClick={handleGitHubLogin} disabled={loading} />
+              <AppleButton onClick={handleAppleLogin} disabled={loading} />
+            </div>
+          </CardContent>
+          
+          <CardFooter className="flex flex-col space-y-4 pt-6">
+            <div className="text-center">
+              <p className="text-sm text-gray-600">
+                Ready to start?{' '}
+                <Link 
+                  href="/entry" 
+                  className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+                >
+                  Go to entry page →
+                </Link>
+              </p>
+            </div>
+            
+            {!ready && (
+              <Alert className="border-yellow-200 bg-yellow-50">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <AlertDescription className="text-yellow-800">
+                  未检测到 Supabase 配置。请检查 .env 文件中的 NEXT_PUBLIC_SUPABASE_URL 和 NEXT_PUBLIC_SUPABASE_ANON_KEY。
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {session && (
+              <div className="pt-2">
+                <Button 
+                  onClick={signOut} 
+                  disabled={!ready} 
+                  variant="outline"
+                  className="w-full"
+                >
+                  Sign out
+                </Button>
+              </div>
+            )}
+          </CardFooter>
+        </Card>
       </div>
     </div>
   );

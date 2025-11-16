@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import SettingsModal from "./SettingsModal";
 
 export interface UserInfo {
   name: string;
@@ -15,6 +16,7 @@ interface UserAvatarProps {
 
 export default function UserAvatar({ userInfo }: UserAvatarProps) {
   const [showProfile, setShowProfile] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Format balance display
   const formatBalance = (cents: number) => {
@@ -42,11 +44,15 @@ export default function UserAvatar({ userInfo }: UserAvatarProps) {
       if (showProfile && !target.closest('.user-avatar-container')) {
         setShowProfile(false);
       }
+      if (showSettings && !target.closest('.settings-modal')) {
+        setShowSettings(false);
+      }
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && showProfile) {
-        setShowProfile(false);
+      if (event.key === 'Escape') {
+        if (showProfile) setShowProfile(false);
+        if (showSettings) setShowSettings(false);
       }
     };
 
@@ -56,10 +62,20 @@ export default function UserAvatar({ userInfo }: UserAvatarProps) {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [showProfile]);
+  }, [showProfile, showSettings]);
 
   return (
-    <div className="relative user-avatar-container">
+    <div className="flex items-center gap-2">
+      {/* Settings button */}
+      <button
+        onClick={() => setShowSettings(true)}
+        className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 transition-all duration-300 flex items-center justify-center border-2 border-white shadow-md hover:shadow-lg transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2"
+        aria-label="Settings"
+        title="设置"
+      >
+        <span className="text-lg">⚙️</span>
+      </button>
+
       {/* Avatar button */}
       <button
         onClick={() => setShowProfile(!showProfile)}
@@ -158,6 +174,12 @@ export default function UserAvatar({ userInfo }: UserAvatarProps) {
           </button>
         </div>
       )}
+
+      {/* Settings modal */}
+      <SettingsModal 
+        isOpen={showSettings} 
+        onClose={() => setShowSettings(false)} 
+      />
     </div>
   );
 }

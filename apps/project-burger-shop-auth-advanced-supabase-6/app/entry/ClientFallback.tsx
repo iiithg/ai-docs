@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { createBrowserClient } from '@/lib/supabase/client';
+import Settings from '../components/Settings';
 
 export default function EntryClientFallback() {
   const [loading, setLoading] = useState(true);
@@ -8,6 +9,26 @@ export default function EntryClientFallback() {
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [supabaseUrl, setSupabaseUrl] = useState<string>('');
+  const [supabaseKey, setSupabaseKey] = useState<string>('');
+
+  // 加载存储的设置
+  useEffect(() => {
+    const storedUrl = localStorage.getItem('supabase_url');
+    const storedKey = localStorage.getItem('supabase_anon_key');
+    if (storedUrl) setSupabaseUrl(storedUrl);
+    if (storedKey) setSupabaseKey(storedKey);
+  }, []);
+
+  // 处理设置变更
+  const handleSettingsChange = (url: string, key: string) => {
+    setSupabaseUrl(url);
+    setSupabaseKey(key);
+    localStorage.setItem('supabase_url', url);
+    localStorage.setItem('supabase_anon_key', key);
+    // 刷新页面以应用新设置
+    window.location.reload();
+  };
 
   useEffect(() => {
     async function run() {
@@ -39,14 +60,51 @@ export default function EntryClientFallback() {
     run();
   }, []);
 
-  if (loading) return <div className="rounded border bg-white p-4 text-sm">Loading...</div>;
-  // If no Supabase session or not configured, render nothing
-  if (error || !name) return null;
+  if (loading) return (
+    <>
+      <Settings 
+        onSettingsChange={handleSettingsChange}
+        currentUrl={supabaseUrl}
+        currentKey={supabaseKey}
+      />
+      <div className="rounded border bg-white p-4 text-sm">Loading...</div>
+    </>
+  );
+
   return (
-    <div className="rounded border bg-white p-4">
-      <div className="font-semibold">恭喜你加入, 你的名字是 {name}</div>
-      {userId && <div className="text-sm text-neutral-600 mt-1">id: {userId}</div>}
-      {email && <div className="text-sm text-neutral-600">email: {email}</div>}
-    </div>
+    <>
+      {/* 设置按钮和模态框 - 始终显示 */}
+      <Settings 
+        onSettingsChange={handleSettingsChange}
+        currentUrl={supabaseUrl}
+        currentKey={supabaseKey}
+      />
+      
+      {/* 用户信息 - 仅在已登录时显示 */}
+      {name && (
+        <div className="rounded border bg-white p-4">
+          <div className="font-semibold">恭喜你加入, 你的名字是 {name}</div>
+          {userId && <div className="text-sm text-neutral-600 mt-1">id: {userId}</div>}
+          {email && <div className="text-sm text-neutral-600">email: {email}</div>}
+        </div>
+      )}
+      
+      {/* 未登录提示 */}
+      {!name && !error && (
+        <div className="rounded border bg-yellow-50 p-4">
+          <div className="text-sm text-yellow-800">
+            正在加载用户信息...
+          </div>
+        </div>
+      )}
+      
+      {error && (
+        <div className="rounded border bg-red-50 p-4">
+          <div className="text-sm text-red-800">
+            {error === 'Not signed in' ? '请先登录以查看用户信息' : error}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

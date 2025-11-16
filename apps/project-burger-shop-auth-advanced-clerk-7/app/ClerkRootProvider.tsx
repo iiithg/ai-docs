@@ -11,6 +11,7 @@ export const ClerkConfigContext = React.createContext<{ clerkConfigured: boolean
 export default function ClerkRootProvider({ children }: { children: React.ReactNode }) {
   const [pk, setPk] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [valid, setValid] = useState(false);
 
   // 增加一个函数专门用于刷新配置
   const refreshConfig = () => {
@@ -25,6 +26,7 @@ export default function ClerkRootProvider({ children }: { children: React.ReactN
       if (ls) key = ls;
     }
     setPk(key);
+    setValid(Boolean(key && /^pk_(test|live)_/.test(key)));
   };
 
   // 初始加载配置
@@ -52,7 +54,7 @@ export default function ClerkRootProvider({ children }: { children: React.ReactN
 
   // 提供配置上下文
   const contextValue = {
-    clerkConfigured: !!pk,
+    clerkConfigured: valid,
     refreshConfig
   };
 
@@ -60,7 +62,7 @@ export default function ClerkRootProvider({ children }: { children: React.ReactN
   if (!ready) return null;
   
   // 如果pk存在，提供ClerkProvider
-  if (pk) {
+  if (valid && pk) {
     return (
       <ClerkConfigContext.Provider value={contextValue}>
         <ClerkProvider publishableKey={pk}>{children}</ClerkProvider>

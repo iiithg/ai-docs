@@ -1,214 +1,99 @@
-import { createClient } from 'npm:@supabase/supabase-js'
-import { verifyWebhook } from 'npm:@clerk/backend/webhooks'
+// 文件路径: supabase/functions/clerk-webhooks/index.ts
 
-Deno.serve(async (req) => {
-  // Verify webhook signature
-  const webhookSecret = Deno.env.get('CLERK_WEBHOOK_SECRET')
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
+import { Webhook } from 'npm:svix'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-  if (!webhookSecret) {
-    return new Response('Webhook secret not configured', { status: 500 })
-  }
+// 从环境变量中获取 Clerk Webhook 签名密钥
+const CLERK_WEBHOOK_SECRET = Deno.env.get('CLERK_WEBHOOK_SECRET')
 
-  const event = await verifyWebhook(req, { signingSecret: webhookSecret })
+if (!CLERK_WEBHOOK_SECRET) {
+  throw new Error('CLERK_WEBHOOK_SECRET is not set in environment variables')
+}
 
-  // Create supabase client
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return new Response('Supabase credentials not configured', { status: 500 })
-  }
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+// 使用 service_role key 初始化 Supabase admin 客户端
+// 这样可以在 Edge Function 中绕过 RLS 策略，对数据库进行管理操作
+const supabaseAdmin = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+)
 
-  switch (event.type) {
-    case 'user.created': {
-      // Handle user creation
-      const { data: user, error } = await supabase
-        .from('users')
-        .insert([
-          {
-            id: event.data.id,
-            first_name: event.data.first_name,
-            last_name: event.data.last_name,
-            avatar_url: event.data.image_url,
-            email_address: event.data.email_addresses?.[0]?.email_address,
-            username: event.data.username,
-            created_at: new Date(event.data.created_at).toISOString(),
-            updated_at: new Date(event.data.updated_at).toISOString(),
-          },
-        ])
-        .select()
-        .single()
+serve(async (req) => {
+  try {
+    // 1. 从请求头中获取 Svix 签名信息
+    const headers = Object.fromEntries(req.headers)
+    const svix_id = headers['svix-id']
+    const svix_timestamp = headers['svix-timestamp']
+    const svix_signature = headers['svix-signature']
 
-      if (error) {
-        console.error('Error creating user:', error)
-        return new Response(JSON.stringify({ error: error.message }), { status: 500 })
-      }
-
-      return new Response(JSON.stringify({ user }), { status: 200 })
+    if (!svix_id || !svix_timestamp || !svix_signature) {
+      return new Response('Missing Svix headers', { status: 400 })
     }
 
-    case 'user.updated': {
-      // Handle user update
-      const { data: user, error } = await supabase
-        .from('users')
-        .update({
-          first_name: event.data.first_name,
-          last_name: event.data.last_name,
-          avatar_url: event.data.image_url,
-          email_address: event.data.email_addresses?.[0]?.email_address,
-          username: event.data.username,
-          updated_at: new Date(event.data.updated_at).toISOString(),
+    const payload = await req.json()
+    const body = JSON.stringify(payload)
+
+    // 2. 使用密钥验证 Webhook 签名的合法性
+    const wh = new Webhook(CLERK_WEBHOOK_SECRET)
+    const evt = wh.verify(body, {
+      'svix-id': svix_id,
+      'svix-timestamp': svix_timestamp,
+      'svix-signature': svix_signature,
+    })
+
+    const { id } = evt.data
+    const eventType = evt.type
+    console.log(`Received webhook event: ${eventType} for user: ${id}`)
+
+    // 3. 根据事件类型执行数据库操作
+    switch (eventType) {
+      case 'user.created': {
+        const { id, first_name, last_name, image_url, email_addresses } = evt.data
+        const { error } = await supabaseAdmin.from('users').insert({
+          id,
+          first_name,
+          last_name,
+          image_url,
+          email: email_addresses[0]?.email_address,
         })
-        .eq('id', event.data.id)
-        .select()
-        .single()
-
-      if (error) {
-        console.error('Error updating user:', error)
-        return new Response(JSON.stringify({ error: error.message }), { status: 500 })
+        if (error) throw error
+        console.log(`User ${id} created in Supabase.`)
+        break
       }
 
-      return new Response(JSON.stringify({ user }), { status: 200 })
-    }
-
-    case 'user.deleted': {
-      // Handle user deletion
-      const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', event.data.id)
-
-      if (error) {
-        console.error('Error deleting user:', error)
-        return new Response(JSON.stringify({ error: error.message }), { status: 500 })
+      case 'user.updated': {
+        const { id, first_name, last_name, image_url, email_addresses } = evt.data
+        const { error } = await supabaseAdmin
+          .from('users')
+          .update({
+            first_name,
+            last_name,
+            image_url,
+            email: email_addresses[0]?.email_address,
+            updated_at: new Date().toISOString(), // 更新时间戳
+          })
+          .eq('id', id)
+        if (error) throw error
+        console.log(`User ${id} updated in Supabase.`)
+        break
       }
 
-      return new Response(JSON.stringify({ success: true }), { status: 200 })
-    }
-
-    case 'organization.created': {
-      // Handle organization creation
-      const { data, error } = await supabase
-        .from('organizations')
-        .insert([
-          {
-            id: event.data.id,
-            name: event.data.name,
-            slug: event.data.slug,
-            created_at: new Date(event.data.created_at).toISOString(),
-            updated_at: new Date(event.data.updated_at).toISOString(),
-          },
-        ])
-        .select()
-        .single()
-
-      if (error) {
-        console.error('Error creating organization:', error)
-        return new Response(JSON.stringify({ error: error.message }), { status: 500 })
+      case 'user.deleted': {
+        // 对于删除事件，ID 可能在顶层
+        const deletedId = id
+        if (!deletedId) {
+          return new Response('Deleted user ID not found', { status: 400 })
+        }
+        const { error } = await supabaseAdmin.from('users').delete().eq('id', deletedId)
+        if (error) throw error
+        console.log(`User ${deletedId} deleted from Supabase.`)
+        break
       }
-
-      return new Response(JSON.stringify({ data }), { status: 200 })
     }
 
-    case 'organization.updated': {
-      const { data, error } = await supabase
-        .from('organizations')
-        .update({
-          name: event.data.name,
-          slug: event.data.slug,
-          updated_at: new Date(event.data.updated_at).toISOString(),
-        })
-        .eq('id', event.data.id)
-        .select()
-        .single()
-
-      if (error) {
-        console.error('Error updating organization:', error)
-        return new Response(JSON.stringify({ error: error.message }), { status: 500 })
-      }
-
-      return new Response(JSON.stringify({ data }), { status: 200 })
-    }
-
-    case 'organization.deleted': {
-      // Handle organization deletion
-      const { error } = await supabase
-        .from('organizations')
-        .delete()
-        .eq('id', event.data.id)
-
-      if (error) {
-        console.error('Error deleting organization:', error)
-        return new Response(JSON.stringify({ error: error.message }), { status: 500 })
-      }
-
-      return new Response(JSON.stringify({ success: true }), { status: 200 })
-    }
-
-    case 'organizationMembership.created': {
-      const { data, error } = await supabase
-        .from('organization_memberships')
-        .insert([
-          {
-            id: event.data.id,
-            user_id: event.data.public_user_data?.user_id,
-            organization_id: event.data.organization?.id,
-            role: event.data.role,
-            created_at: new Date(event.data.created_at).toISOString(),
-            updated_at: new Date(event.data.updated_at).toISOString(),
-          },
-        ])
-        .select()
-        .single()
-
-      if (error) {
-        console.error('Error creating organization membership:', error)
-        return new Response(JSON.stringify({ error: error.message }), { status: 500 })
-      }
-
-      return new Response(JSON.stringify({ data }), { status: 200 })
-    }
-
-    case 'organizationMembership.updated': {
-      const { data, error } = await supabase
-        .from('organization_memberships')
-        .update({
-          user_id: event.data.public_user_data?.user_id,
-          organization_id: event.data.organization?.id,
-          role: event.data.role,
-          updated_at: new Date(event.data.updated_at).toISOString(),
-        })
-        .eq('id', event.data.id)
-        .select()
-        .single()
-
-      if (error) {
-        console.error('Error updating organization membership:', error)
-        return new Response(JSON.stringify({ error: error.message }), { status: 500 })
-      }
-
-      return new Response(JSON.stringify({ data }), { status: 200 })
-    }
-
-    case 'organizationMembership.deleted': {
-      // Handle organization membership deletion
-      const { error } = await supabase
-        .from('organization_memberships')
-        .delete()
-        .eq('id', event.data.id)
-
-      if (error) {
-        console.error('Error deleting organization membership:', error)
-        return new Response(JSON.stringify({ error: error.message }), { status: 500 })
-      }
-
-      return new Response(JSON.stringify({ success: true }), { status: 200 })
-    }
-
-    default: {
-      // Unhandled event type
-      console.log('Unhandled event type:', JSON.stringify(event, null, 2))
-      return new Response(JSON.stringify({ success: true }), { status: 200 })
-    }
+    return new Response('Webhook processed successfully', { status: 200 })
+  } catch (err) {
+    console.error('Error processing webhook:', err.message)
+    return new Response(`Webhook Error: ${err.message}`, { status: 400 })
   }
 })

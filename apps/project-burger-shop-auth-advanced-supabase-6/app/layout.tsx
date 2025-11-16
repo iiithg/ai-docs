@@ -1,6 +1,7 @@
 import '../styles/globals.css';
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import SimpleSettings from './components/SimpleSettings';
 
 export const metadata: Metadata = {
   title: 'Advanced Auth — Burger Shop',
@@ -19,6 +20,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <Link href="/auth/login" className="hover:text-burger-red transition-colors">oauth</Link>
                 <Link href="/entry" className="hover:text-burger-red transition-colors">entry</Link>
               </nav>
+            </div>
+            <div className="flex items-center gap-2">
+              <SimpleSettings />
             </div>
           </div>
         </header>

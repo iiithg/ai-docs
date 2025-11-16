@@ -30,7 +30,7 @@ export default function Settings({ onSettingsChange, currentUrl = '', currentKey
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed top-4 right-4 bg-gray-600 hover:bg-gray-700 text-white p-2 rounded-lg shadow-lg transition-colors z-50"
+        className="text-neutral-600 hover:text-burger-red transition-colors p-1"
         title="Settings"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

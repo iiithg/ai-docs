@@ -2,6 +2,7 @@ import { serverComponentClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import EntryClientFallback from './ClientFallback';
 import SignOutRow from '../components/SignOutRow';
+import Settings from '../components/Settings';
 
 export default async function EntryPage() {
   const supabase = serverComponentClient();
@@ -15,6 +16,12 @@ export default async function EntryPage() {
       </div>
     );
   }
+
+  // 处理设置变更的客户端函数
+  const handleSettingsChange = async (url: string, key: string) => {
+    // 这里可以添加服务器端设置保存逻辑
+    console.log('Settings updated:', { url, key: key.substring(0, 10) + '...' });
+  };
   const { data: { user } } = await supabase.auth.getUser();
   let displayName: string | null = null;
   let emailForUser: string | null = null;
