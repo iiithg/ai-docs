@@ -18,7 +18,7 @@ This directory contains SQL scripts for setting up the burger shop database with
 
 3. **Execute the initialization script**
    - Click "New query" to create a new query
-   - Copy the entire content of `init-all.sql` file
+   - Copy the entire content of `init.sql`
    - Paste it into the SQL Editor
    - Click "Run" button to execute the script
 
@@ -29,40 +29,18 @@ This directory contains SQL scripts for setting up the burger shop database with
      - `promo_codes` table should contain 10 sample promo codes with simplified structure
 
 ### 🎉 Done!
-After executing `init-all.sql`, your database is fully set up and ready to run the application.
+After executing `init.sql`, your database is fully set up and ready to run the application.
 
 ---
 
 ## 📋 Step-by-step Setup (Optional)
 
-If you prefer to execute step by step, run these scripts in order in Supabase SQL Editor:
-
-1. `000-extensions.sql` - Enable required extensions
-2. `010-table_menu_items.sql` - Create menu items table
-3. `011-table_promo_codes.sql` - Create promo codes table
-4. `030-rls_dev_off.sql` - Disable RLS for development
-5. `040-seed_menu_items.sql` - Insert sample menu items
-6. `041-seed_promo_codes.sql` - Insert sample promo codes
-
-### How to execute step by step in Supabase SQL Editor:
-1. Open Supabase Dashboard → SQL Editor
-2. For each script file:
-   - Click "New query" 
-   - Copy the content of the corresponding script file
-   - Paste it into the editor
-   - Click "Run" to execute
-3. Execute all scripts in the order listed above
+If you prefer to run smaller chunks (extensions, tables, seeds), open `init.sql` and copy only the section you need—the script is annotated with banner comments so each block is easy to identify before executing it inside the SQL Editor.
 
 ## 📁 Script Files Description
 
-### Core Scripts
-- **`init-all.sql`** - 🌟 **One-time initialization script (Recommended)**
-- `000-extensions.sql` - PostgreSQL extensions
-- `010-table_menu_items.sql` - Menu items table structure
-- `011-table_promo_codes.sql` - Promo codes table structure
-- `030-rls_dev_off.sql` - Development environment security settings
-- `040-seed_menu_items.sql` - Sample menu items data
-- `041-seed_promo_codes.sql` - Sample promo codes data
+### Core Script
+- **`init.sql`** - 🌟 **One-time initialization script (Recommended)**
 
 ## 📊 Table Structure
 

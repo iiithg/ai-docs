@@ -42,18 +42,6 @@ Bucket not found
      FOR SELECT USING (bucket_id = 'avatars');
      ```
 
-### Method 2: Using Automated Script
-
-If you have already configured your `.env.local` file, you can run:
-
-```bash
-# Ensure dependencies are installed
-npm install
-
-# Run the setup script
-node scripts/setup-storage.js
-```
-
 ## Verify Setup
 
 After setup is complete, you should see:

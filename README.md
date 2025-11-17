@@ -17,16 +17,18 @@ This repository is designed to provide a hands-on learning experience for develo
 ```
 Project5-Supabase-Demos/
 ├── apps/
-│   ├── burger-template/                           # Base Next.js template, no database required
-│   ├── project-burger-shop-menu-crud-1/           # Menu items CRUD operations
-│   ├── project-burger-shop-auth-users-2/          # Authentication, profiles, wallet system
-│   ├── project-burger-shop-realtime-orders-3/    # Realtime chat and presence
-│   ├── project-burger-shop-storage-uploads-4/    # File storage for avatars
-│   ├── project-burger-shop-edge-function-5/     # Edge function demos
-│   ├── project-burger-shop-auth-advanced-supabase-6/ # Advanced Auth with Supabase
-│   └── project-burger-shop-auth-advanced-clerk-7/    # Advanced Auth with Clerk
-├── docs/                                           # Documentation and tutorials
-└── CLAUDE.md                                      # Development guidelines for Claude Code
+│   ├── burger-template/                               # Base Next.js template, no database required
+│   ├── project-burger-shop-menu-crud-1/               # Menu items CRUD operations
+│   ├── project-burger-shop-auth-users-2/              # Authentication, profiles, wallet system
+│   ├── project-burger-shop-realtime-orders-3/         # Realtime chat and presence
+│   ├── project-burger-shop-storage-uploads-4/         # File storage for avatars
+│   ├── project-burger-shop-edge-function-5/           # Edge function demos
+│   ├── project-burger-shop-auth-advanced-supabase-6/  # Advanced Auth with Supabase
+│   ├── project-burger-shop-auth-advanced-clerk-7/     # Advanced Auth with Clerk
+│   └── sql-examples/                                  # Standalone SQL lessons (no frontend)
+├── docs/                                              # Documentation and tutorials
+├── AGENTS.md                                          # Repository-wide contributor guide
+└── CLAUDE.md                                          # Development guidelines for Claude Code
 ```
 
 ## 🚀 Quick Start
@@ -79,7 +81,7 @@ cp .env.example .env.local
 
 # Run database initialization
 # Option 1: Supabase Dashboard SQL Editor (recommended)
-# Option 2: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/init-all.sql
+# Option 2: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/init.sql
 
 npm run dev
 ```

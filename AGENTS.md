@@ -1,40 +1,37 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `apps/` — runnable demos and templates (each isolated):
-  - `burger-template/` — Next.js base UI for the burger shop theme.
-  - `project-burger-shop-*-<n>/` — single‑feature demos (menu CRUD, auth-users, realtime, storage, edge-fn).
-  - `project-burger-shop-small/` (1+2) and `project-burger-shop-big/` (1–5) combined apps.
-- `docs/` — overview, per‑app architecture notes
-- Naming pattern: `project-<scenario>-<feature>-<n>`; keep features focused per app.
+- `apps/` holds runnable demos. Use `apps/burger-template/` as the base when adding a new scenario, and keep each `project-burger-shop-<feature>-<n>/` focused on a single capability (CRUD, auth, realtime, storage, edge functions). Combined experiences live in `project-burger-shop-small/` (features 1+2) and `project-burger-shop-big/` (features 1–5).
+- `docs/` contains high-level overviews and per-app architecture notes; mirror any new app decisions here.
+- Follow the naming pattern `project-<scenario>-<feature>-<n>` so contributors can instantly locate demos by scenario and depth.
 
 ## Build, Test, and Development Commands
-- Per app folder:
-  - `npm install` — install deps.
-  - `npm run dev` — run locally (Next.js or Vite depending on the app).
-  - `npm run build` — production build.
-  - `npm run lint` / `npm run format` — if configured; otherwise optional.
-- Env: copy `.env.example` → `.env.local` with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or Vite equivalents).
+- `npm install` (run per app directory) installs only the dependencies you actually modify.
+- `npm run dev` starts the Next.js or Vite dev server; rely on `.env.local` for Supabase keys.
+- `npm run build` produces a production bundle for deployment tests.
+- `npm run lint` / `npm run format` (if defined) keep code quality consistent; check `package.json` in each app before running.
 
 ## Coding Style & Naming Conventions
-- TypeScript, 2‑space indent, semicolons on, single quotes.
-- Components `PascalCase.tsx`; hooks `useSomething.ts`; folders kebab‑case.
-- Prefer small, pure components; colocate minimal styles (Tailwind or CSS modules).
-- Exports: prefer named exports; avoid default unless a page component.
+- TypeScript everywhere, 2-space indentation, semicolons, single quotes.
+- Components use `PascalCase.tsx`, hooks use `useSomething.ts`, utility folders stay kebab-case.
+- Prefer named exports so features remain composable across demos.
+- Inline styles stay minimal (Tailwind or CSS modules) and colocated with their component.
 
 ## Testing Guidelines
-- Tests are optional for demos. If adding:
-  - Unit: Vitest/Jest (`*.test.ts[x]`).
-  - E2E: Playwright in combined apps.
-  - Keep tests fast and colocated with code.
+- Tests are optional but colocate them beside the code as `*.test.ts[x]` when you add logic worth guarding.
+- Use Vitest or Jest for units and Playwright for combined app flows; keep runs under a minute.
+- Execute `npm test` (or the framework-specific script) inside the relevant app before opening a pull request.
 
 ## Commit & Pull Request Guidelines
-- Use Conventional Commits (e.g., `feat: menu CRUD page`, `fix: RLS policy notes`).
+- Write Conventional Commits (e.g., `feat: menu CRUD page`, `fix: RLS policy notes`) so release notes stay machine-readable.
+- Pull requests should summarize scope, list impacted apps, and attach screenshots or terminal output for UI or CLI changes.
+- Reference related Supabase issues or Notion tasks, and call out env or doc updates in the description.
 
 ## Security & Configuration Tips
-- Do not commit secrets. Use `.env.local`; gitignore it.
-- Dev policies may be permissive; document and tighten for production (RLS + least privilege).
-- Use service‑role keys only in server contexts (Edge Functions), never in the client.
+- Copy `.env.example` to `.env.local`, fill `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and keep those files untracked.
+- Never expose service-role keys in client code; reserve them for Edge Functions or secured server contexts.
+- Document relaxed Row Level Security assumptions in `docs/` whenever you diverge from production posture.
 
-## Agent‑Specific Instructions
-- Keep single‑feature demos single‑purpose and minimal; base new work on `apps/burger-template/`.
+## Agent-Specific Instructions
+- Keep every single-feature demo scoped to one capability, leveraging `apps/burger-template/` as the starting point.
+- Favor small, pure components and colocated logic so the template stays approachable for other agents.

@@ -49,7 +49,7 @@ This project showcases the following **Supabase features**:
 npm install
 npm run dev
 ```
-- Open `http://localhost:3001` — start managing your burger shop!
+- Open `http://localhost:3000` (or whatever `PORT` you set when running `next dev`) to start managing your burger shop.
 
 ## 📁 Project Structure
 
@@ -64,8 +64,8 @@ npm run dev
 
 ### Database Scripts
 - **`scripts/`** — SQL scripts for database setup and management
-  - **`init-all.sql`** — 🌟 One-time initialization script (recommended)
-  - Individual setup scripts for step-by-step configuration
+  - **`init.sql`** — 🌟 One-time initialization script (recommended)
+  - The script is organized into clearly labeled sections (extensions, tables, seeds) so you can run parts individually if needed
   - See `scripts/README.md` for detailed instructions
 
 ## Database Setup
@@ -76,7 +76,7 @@ The simplest approach is to run the single initialization script.
 
 1. Open the Supabase Dashboard and select your project
 2. Go to SQL Editor → New query
-3. Copy the entire contents of `scripts/init-all.sql`
+3. Copy the entire contents of `scripts/init.sql`
 4. Paste into the SQL Editor and click Run
 
 After success, verify in Table Editor that you have:
@@ -85,8 +85,7 @@ After success, verify in Table Editor that you have:
 
 ### 📋 Step-by-step (Optional)
 
-If you prefer to apply scripts individually, run these in order in the SQL Editor:
-- `000-extensions.sql` → `010-table_menu_items.sql` → `011-table_promo_codes.sql` → `030-rls_dev_off.sql` → `040-seed_menu_items.sql` → `041-seed_promo_codes.sql`
+Open `scripts/init.sql` and execute one section at a time (extensions, tables, RLS toggles, seeds). Each block is separated by banner comments so you can copy/paste only what you need.
 
 ### 🗄️ Database Tables
 

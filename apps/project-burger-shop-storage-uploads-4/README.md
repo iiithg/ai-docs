@@ -66,12 +66,9 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
    Allowed MIME types: image/jpeg, image/png, image/gif, image/webp
    ```
 
-#### Using Setup Script
+#### Need More Guidance?
 
-```bash
-# Configure .env.local first, then run:
-node scripts/setup-storage.js
-```
+See `STORAGE_SETUP.md` in this folder for a screenshot walkthrough of creating the `avatars` bucket and the minimal policies required for anonymous uploads.
 
 ### 4. Test Uploads
 
@@ -111,9 +108,8 @@ The application automatically:
 - **`app/api/storage/sign/route.ts`** - Server-side URL signing fallback
 - **`lib/supabase/`** - Supabase client configuration
 
-### Setup Scripts
-- **`scripts/setup-storage.js`** - Automated bucket creation
-- **`STORAGE_SETUP.md`** - Detailed setup instructions
+### Setup Resources
+- **`STORAGE_SETUP.md`** — Step-by-step bucket and policy instructions
 
 ## 🔧 Configuration Options
 

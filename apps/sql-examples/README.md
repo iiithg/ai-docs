@@ -1,7 +1,6 @@
 # Standalone Orders Table SQL Example Series
-# SQL Example Scripts Directory Overview
 
-This folder (`docs/sql-examples/`) contains a series of fully independent SQL demo scripts, all focused on a single sample "orders" table. These examples are not tied to any project codebase; you can copy and use them in any PostgreSQL or Supabase SQL editor for learning and testing.
+This folder (`apps/sql-examples/`) contains a series of fully independent SQL demo scripts, all focused on a single sample "orders" table. These examples are not tied to any project codebase; you can copy and use them in any PostgreSQL or Supabase SQL editor for learning and testing.
 
 ## Table Content Description
 

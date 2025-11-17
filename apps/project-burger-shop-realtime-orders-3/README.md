@@ -54,24 +54,12 @@ The simplest approach is to run the complete initialization script:
 
 1. Open the Supabase Dashboard and select your project
 2. Go to SQL Editor → New query
-3. Copy the entire contents of `scripts/init-chat-complete.sql`
+3. Copy the entire contents of `scripts/init.sql`
 4. Paste into the SQL Editor and click Run
 
 ### 📋 Alternative Setup Options
 
-**Fix Table Structure Issues**
-```sql
--- Run this in Supabase SQL Editor
--- File: scripts/reset-chat-tables.sql
--- This completely resets tables and creates new structure
-```
-
-**Clean Up Old Tables Only**
-```sql
--- Run this in Supabase SQL Editor
--- File: scripts/cleanup-old-tables.sql
--- Follow with init-chat-complete.sql for fresh setup
-```
+Need a clean slate? Run `scripts/reset.sql` in the SQL Editor or with `psql` to drop and recreate the chat tables before reapplying `scripts/init.sql`.
 
 ### 🔐 Enable Realtime
 
@@ -87,10 +75,8 @@ After database setup:
 - **`lib/supabase/`** — Supabase client configuration
 
 ### Database Scripts
-- **`scripts/init-chat-complete.sql`** — Complete database initialization
-- **`scripts/reset-chat-tables.sql`** — Clean reset for troubleshooting
-- **`scripts/cleanup-old-tables.sql`** — Remove old table structures
-- **`scripts/fix-table-structure.sql`** — Fix column mismatches
+- **`scripts/init.sql`** — Complete database initialization (idempotent)
+- **`scripts/reset.sql`** — Drops existing tables/policies before re-running `init.sql`
 
 ## 🎯 Technical Implementation
 
@@ -119,9 +105,9 @@ This project demonstrates several **Supabase Realtime** patterns:
 ### Common Issues
 
 **Error: "Could not find the 'username' column"**
-- **Cause**: Table has old structure with `user_id` instead of `username`
-- **Solution**: Run `scripts/reset-chat-tables.sql` (recommended)
-- **Alternative**: Run `scripts/cleanup-old-tables.sql` then `scripts/init-chat-complete.sql`
+- **Cause**: Table has old structure with `user_id` instead of the newer `username` column
+- **Solution**: Run `scripts/reset.sql` to drop and recreate the schema
+- **Alternative**: Manually drop the `chat_messages` table in Table Editor and rerun `scripts/init.sql`
 
 **Realtime Not Working**
 - **Check**: Ensure Realtime is enabled for `chat_messages` table

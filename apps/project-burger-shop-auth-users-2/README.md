@@ -50,8 +50,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3001`:
-
+Open `http://localhost:3000` (or the `PORT` you pass to `next dev`):
 - **`/auth`** — Register or login to access the shop
 - **`/shop`** — Browse menu, claim welcome gift, make purchases
 - **`/admin`** — Admin controls for menu management (admin-only)
@@ -207,4 +206,3 @@ Open `http://localhost:3001`:
 - [Supabase Auth Documentation](https://supabase.com/docs/guides/auth)
 - [Row Level Security Guide](https://supabase.com/docs/guides/auth/row-level-security)
 - [Database Functions Documentation](https://supabase.com/docs/guides/database/functions)
-
