@@ -90,3 +90,9 @@ npm run dev
 - **Server-Side Supabase Client**: A server-side client is used in Server Components and Route Handlers to securely interact with Supabase.
 - **JWT API Route (`/api/jwt-echo`)**: This route demonstrates how to protect an API endpoint by verifying a JWT. It uses the `SUPABASE_JWT_SECRET` to decode the token and return its claims, confirming the user's identity.
 
+## 🧰 Troubleshooting OAuth “Database error saving new user”
+If Google/GitHub login bounces back with  
+`error=server_error&error_description=Database+error+saving+new+user`, it almost always means the `profiles` table/trigger do not match the code. Fix it by:
+1) Re-run `scripts/init.sql` in the Supabase SQL Editor to recreate `public.profiles` with columns `id uuid primary key references auth.users(id)`, `name`, `optional_info`, plus the `handle_new_user` trigger and RLS policies.
+2) Ensure there is **no** mismatching column like `user_id` or `full_name`; the app inserts/queries `id`, `name`, `optional_info`.
+3) Clear Supabase cookies/localStorage in the browser and retry OAuth.

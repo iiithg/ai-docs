@@ -15,7 +15,16 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = routeHandlerClient();
-    await supabase.auth.exchangeCodeForSession(code);
+    if (!supabase) {
+      return NextResponse.redirect(new URL(`/auth/login?error=${encodeURIComponent('supabase_client_error')}`, url.origin));
+    }
+    
+    try {
+      await supabase.auth.exchangeCodeForSession(code);
+    } catch (err) {
+      console.error('Error exchanging code for session:', err);
+      return NextResponse.redirect(new URL(`/auth/login?error=${encodeURIComponent('session_exchange_failed')}`, url.origin));
+    }
   }
   return NextResponse.redirect(new URL('/entry', url.origin));
 }

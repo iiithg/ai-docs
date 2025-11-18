@@ -132,10 +132,10 @@ export default function LoginPage() {
       if (userId) {
         // ensure a profile row exists; requires scripts/init.sql policies
         const { error: upsertErr } = await supabase.from('profiles').upsert({
-          user_id: userId,
+          id: userId,
           name,
           optional_info: optionalInfo
-        }, { onConflict: 'user_id' });
+        }, { onConflict: 'id' });
         if (upsertErr) throw upsertErr;
       }
     } catch (e: any) {
