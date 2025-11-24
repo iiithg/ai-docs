@@ -11,7 +11,7 @@ This project provides a robust authentication solution using Supabase, demonstra
 - **📧 Email/Password Auth**: Classic email and password registration with profile creation.
 - **🍪 Server-Side Sessions**: Secure session management using cookies and Next.js middleware.
 - **🛡️ Protected Routes**: Middleware-enforced access control for authenticated users.
-- **🔑 JWT-Protected API**: `/api/jwt-echo` endpoint that validates and decodes JWTs using `SUPABASE_JWT_SECRET`.
+
 - **👤 User Profiles**: Automatic profile creation in the `profiles` table upon registration.
 
 ### Application Features
@@ -31,9 +31,8 @@ Update the file with your Supabase project credentials:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_JWT_SECRET=your-jwt-secret
 ```
-- **JWT Secret**: Found in Supabase Dashboard → Settings → API.
+
 - **OAuth Callback URL**: Ensure `http://localhost:3000/auth/callback` is added to your Supabase project's OAuth provider settings.
 
 ### 2. Database Setup
@@ -81,14 +80,14 @@ npm run dev
 - **`app/`**: Contains the application's routes and UI.
   - **`auth/`**: Handles authentication flows (login, callback).
   - **`entry/page.tsx`**: A protected page accessible only to authenticated users.
-  - **`api/jwt-echo/route.ts`**: A JWT-protected API route.
+
 - **`middleware.ts`**: Implements server-side session management and route protection.
 - **`lib/supabase/`**: Configures the Supabase clients for server and client-side use.
 
 ## 🎯 Technical Implementation
 - **Middleware (`middleware.ts`)**: Intercepts requests to refresh the user's session cookie, ensuring they remain logged in. It also protects routes by redirecting unauthenticated users to the login page.
 - **Server-Side Supabase Client**: A server-side client is used in Server Components and Route Handlers to securely interact with Supabase.
-- **JWT API Route (`/api/jwt-echo`)**: This route demonstrates how to protect an API endpoint by verifying a JWT. It uses the `SUPABASE_JWT_SECRET` to decode the token and return its claims, confirming the user's identity.
+
 
 ## 🧰 Troubleshooting OAuth “Database error saving new user”
 If Google/GitHub login bounces back with  
