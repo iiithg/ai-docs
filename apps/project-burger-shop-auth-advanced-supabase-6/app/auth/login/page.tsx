@@ -20,7 +20,7 @@ export default function LoginPage() {
   const [supabaseKey, setSupabaseKey] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const ready = useMemo(() => Boolean(supabase), [supabase]);
+  const ready = useMemo(() => Boolean(supabase && supabaseUrl && supabaseKey), [supabase, supabaseUrl, supabaseKey]);
 
   // email/password auth state
   const [email, setEmail] = useState('');
@@ -107,7 +107,7 @@ export default function LoginPage() {
 
   async function emailSignIn() {
     setErr(null); setMessage(null); setLoading(true);
-    if (!supabase) { setErr('Supabase not ready'); setLoading(false); return; }
+    if (!supabase) { setErr('Supabase 配置缺失或无效，请点击右上角⚙️或检查 .env'); setLoading(false); return; }
     if (!email || !password) { setErr('请输入邮箱与密码'); setLoading(false); return; }
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) { setErr(error.message); setLoading(false); }
@@ -116,7 +116,7 @@ export default function LoginPage() {
 
   async function emailSignUp() {
     setErr(null); setMessage(null); setLoading(true);
-    if (!supabase) { setErr('Supabase not ready'); setLoading(false); return; }
+    if (!supabase) { setErr('Supabase 配置缺失或无效，请点击右上角⚙️或检查 .env'); setLoading(false); return; }
     if (!email || !password || !name || !optionalInfo) {
       setErr('注册需要填写：邮箱、密码、name、optional 信息（均为必填）'); setLoading(false); return;
     }
@@ -147,7 +147,16 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <Card className="shadow-lg border border-gray-200 bg-white">
-          <CardHeader className="space-y-1 pb-6">
+          <CardHeader className="relative space-y-1 pb-6">
+            <div className="absolute top-4 right-4">
+              <Settings
+                url={supabaseUrl}
+                anonKey={supabaseKey}
+                onSettingsChange={handleSettingsChange}
+              >
+                <SettingsIcon className="w-5 h-5 text-gray-500 hover:text-gray-800 cursor-pointer transition-colors" />
+              </Settings>
+            </div>
             <CardTitle className="text-2xl font-bold text-center text-gray-900">
               Welcome Back
             </CardTitle>
@@ -157,6 +166,14 @@ export default function LoginPage() {
           </CardHeader>
           
           <CardContent className="space-y-6">
+            {!ready && (
+              <Alert className="border-yellow-200 bg-yellow-50">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <AlertDescription className="text-yellow-800">
+                  Supabase 配置缺失或无效，请点击右上角⚙️设置或检查 .env
+                </AlertDescription>
+              </Alert>
+            )}
             <Tabs defaultValue="signin" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signin" className="flex items-center gap-2">
@@ -195,7 +212,7 @@ export default function LoginPage() {
                   </div>
                   <Button 
                     onClick={emailSignIn} 
-                    disabled={loading}
+                    disabled={loading || !ready}
                     className="w-full h-11 bg-blue-600 hover:bg-blue-700"
                   >
                     {loading ? 'Signing in...' : 'Sign In'}
@@ -251,7 +268,7 @@ export default function LoginPage() {
                   </div>
                   <Button 
                     onClick={emailSignUp} 
-                    disabled={loading}
+                    disabled={loading || !ready}
                     className="w-full h-11 bg-green-600 hover:bg-green-700"
                   >
                     {loading ? 'Creating account...' : 'Create Account'}
@@ -286,8 +303,8 @@ export default function LoginPage() {
             </div>
             
             <div className="space-y-3">
-              <GoogleButton onClick={handleGoogleLogin} disabled={loading} />
-              <GitHubButton onClick={handleGitHubLogin} disabled={loading} />
+              <GoogleButton onClick={handleGoogleLogin} disabled={loading || !ready} />
+            <GitHubButton onClick={handleGitHubLogin} disabled={loading || !ready} />
 
             </div>
           </CardContent>

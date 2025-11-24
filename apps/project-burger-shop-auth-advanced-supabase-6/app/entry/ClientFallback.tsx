@@ -12,9 +12,26 @@ export default function EntryClientFallback() {
   useEffect(() => {
     async function run() {
       try {
+        const urlLS = typeof window !== 'undefined' ? (localStorage.getItem('supabase_url') || '') : '';
+        const keyLS = typeof window !== 'undefined' ? (localStorage.getItem('supabase_anon_key') || '') : '';
+        const urlEnv = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+        const keyEnv = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+        const effectiveUrl = urlLS || urlEnv;
+        const effectiveKey = keyLS || keyEnv;
+        if (!effectiveUrl || !effectiveKey) {
+          setError('Supabase 配置缺失或无效，请点击右上角⚙️设置或检查 .env');
+          setLoading(false);
+          return;
+        }
+        const health = await fetch(`${effectiveUrl}/auth/v1/settings`, { headers: { apikey: effectiveKey } });
+        if (!health.ok) {
+          setError('Supabase 配置可能有问题，请检查 URL 与 Anon Key 是否正确');
+          setLoading(false);
+          return;
+        }
         const supabase = createBrowserClient();
         if (!supabase) {
-          setError('Supabase not configured in browser');
+          setError('Supabase 配置缺失或无效，请点击右上角⚙️设置或检查 .env');
           setLoading(false);
           return;
         }
@@ -26,12 +43,13 @@ export default function EntryClientFallback() {
         }
         setUserId(session.user.id);
         setEmail(session.user.email ?? null);
-        // try profiles first
         const { data: profile } = await supabase.from('profiles').select('name').eq('id', session.user.id).maybeSingle();
-        const n = profile?.name || (session.user.user_metadata as any)?.name || session.user.email || null;
+        const meta = session.user.user_metadata as { name?: string } | null;
+        const n = profile?.name || meta?.name || session.user.email || null;
         setName(n);
-      } catch (e: any) {
-        setError(e?.message || 'Failed to resolve session');
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e ?? '');
+        setError(msg || '无法获取用户信息，请检查 Supabase 配置或登录状态');
       } finally {
         setLoading(false);
       }
