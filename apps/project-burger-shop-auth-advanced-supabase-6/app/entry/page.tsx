@@ -9,7 +9,7 @@ export default async function EntryPage() {
     return (
       <div className="mx-auto max-w-lg">
         <h1 className="text-2xl font-bold mb-2">Entry</h1>
-        <p className="text-neutral-600 mb-4">登录成功后可见。</p>
+        <p className="text-neutral-600 mb-4">Visible after sign-in.</p>
         <EntryClientFallback />
         <SignOutRow />
       </div>
@@ -25,18 +25,19 @@ export default async function EntryPage() {
       .select('name')
       .eq('id', user.id)
       .maybeSingle();
-    displayName = profile?.name || (user.user_metadata as any)?.name || user.email || null;
+    const meta = user.user_metadata as { name?: string } | null;
+    displayName = profile?.name || meta?.name || user.email || null;
     emailForUser = user.email ?? null;
   }
 
   return (
     <div className="mx-auto max-w-lg">
       <h1 className="text-2xl font-bold mb-2">Entry</h1>
-      <p className="text-neutral-600 mb-4">登录成功后可见。</p>
+      <p className="text-neutral-600 mb-4">Visible after sign-in.</p>
 
       {user && (
         <div className="rounded border bg-white p-4">
-          <div className="font-semibold">恭喜你加入，您的名字是 {displayName}</div>
+          <div className="font-semibold">Welcome, your name is {displayName}</div>
           <div className="text-sm text-neutral-600 mt-1">id: {user.id}</div>
           {emailForUser && <div className="text-sm text-neutral-600">email: {emailForUser}</div>}
         </div>
@@ -46,7 +47,7 @@ export default async function EntryPage() {
       <SignOutRow />
 
       <div className="mt-4">
-        <Link className="text-burger-red" href="/auth/login">← 返回登录</Link>
+        <Link className="text-burger-red" href="/auth/login">← Back to Login</Link>
       </div>
     </div>
   );

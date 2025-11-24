@@ -12,8 +12,9 @@ export default function SignOutRow() {
       const supabase = createBrowserClient();
       if (supabase) await supabase.auth.signOut();
       router.push('/auth/login');
-    } catch (e: any) {
-      setMsg(e?.message || '退出登录失败');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e ?? '');
+      setMsg(msg || 'Sign out failed');
     }
   }
 
@@ -21,7 +22,7 @@ export default function SignOutRow() {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('supabase_url');
       localStorage.removeItem('supabase_anon_key');
-      setMsg('已清除本地设置。');
+      setMsg('Local settings cleared.');
     }
   }
 

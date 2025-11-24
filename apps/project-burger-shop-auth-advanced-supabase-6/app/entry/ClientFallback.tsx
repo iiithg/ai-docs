@@ -19,19 +19,19 @@ export default function EntryClientFallback() {
         const effectiveUrl = urlLS || urlEnv;
         const effectiveKey = keyLS || keyEnv;
         if (!effectiveUrl || !effectiveKey) {
-          setError('Supabase 配置缺失或无效，请点击右上角⚙️设置或检查 .env');
+          setError('Supabase configuration missing or invalid. Use ⚙️ Settings or check .env');
           setLoading(false);
           return;
         }
         const health = await fetch(`${effectiveUrl}/auth/v1/settings`, { headers: { apikey: effectiveKey } });
         if (!health.ok) {
-          setError('Supabase 配置可能有问题，请检查 URL 与 Anon Key 是否正确');
+          setError('Supabase configuration looks invalid. Verify Project URL and anon key');
           setLoading(false);
           return;
         }
         const supabase = createBrowserClient();
         if (!supabase) {
-          setError('Supabase 配置缺失或无效，请点击右上角⚙️设置或检查 .env');
+          setError('Supabase configuration missing or invalid. Use ⚙️ Settings or check .env');
           setLoading(false);
           return;
         }
@@ -49,7 +49,7 @@ export default function EntryClientFallback() {
         setName(n);
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e ?? '');
-        setError(msg || '无法获取用户信息，请检查 Supabase 配置或登录状态');
+        setError(msg || 'Failed to resolve session. Check Supabase config or login state');
       } finally {
         setLoading(false);
       }
@@ -63,20 +63,18 @@ export default function EntryClientFallback() {
 
   return (
     <>
-      {/* 用户信息 - 仅在已登录时显示 */}
       {name && (
         <div className="rounded border bg-white p-4">
-          <div className="font-semibold">恭喜你加入, 你的名字是 {name}</div>
+          <div className="font-semibold">Welcome, your name is {name}</div>
           {userId && <div className="text-sm text-neutral-600 mt-1">id: {userId}</div>}
           {email && <div className="text-sm text-neutral-600">email: {email}</div>}
         </div>
       )}
       
-      {/* 未登录提示 */}
       {!name && !error && (
         <div className="rounded border bg-yellow-50 p-4">
           <div className="text-sm text-yellow-800">
-            正在加载用户信息...
+            Loading user info...
           </div>
         </div>
       )}
@@ -84,7 +82,7 @@ export default function EntryClientFallback() {
       {error && (
         <div className="rounded border bg-red-50 p-4">
           <div className="text-sm text-red-800">
-            {error === 'Not signed in' ? '请先登录以查看用户信息' : error}
+            {error === 'Not signed in' ? 'Please sign in to view user info' : error}
           </div>
         </div>
       )}

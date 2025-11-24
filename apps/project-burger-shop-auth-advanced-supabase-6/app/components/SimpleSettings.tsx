@@ -8,7 +8,7 @@ export default function SimpleSettings() {
   const [supabaseKey, setSupabaseKey] = useState('');
   const [showKey, setShowKey] = useState(false);
 
-  // 加载已保存的设置
+  // Load saved settings
   useEffect(() => {
     // Read new canonical keys; fall back to legacy camelCase keys
     const savedUrl =
@@ -31,7 +31,7 @@ export default function SimpleSettings() {
       localStorage.removeItem('supabaseUrl');
       localStorage.removeItem('supabaseKey');
       setIsOpen(false);
-      // 刷新页面以重新检查设置
+      // Reload page to reinitialize client with new settings
       window.location.reload();
     }
   };
@@ -63,7 +63,7 @@ export default function SimpleSettings() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800">设置</h2>
+              <h2 className="text-xl font-bold text-gray-800">Settings</h2>
               <button onClick={() => setIsOpen(false)} className="text-gray-500 hover:text-gray-700">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -112,29 +112,29 @@ export default function SimpleSettings() {
               </div>
 
               <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-md">
-                <p className="font-medium mb-1">如何获取：</p>
+                <p className="font-medium mb-1">Where to find:</p>
                 <ol className="list-decimal list-inside space-y-1">
-                  <li>登录 Supabase Dashboard</li>
-                  <li>选择你的项目 → Settings → API</li>
-                  <li>复制 Project URL 和 anon public key</li>
+                  <li>Log in to Supabase Dashboard</li>
+                  <li>Select your project → Settings → API</li>
+                  <li>Copy Project URL and anon public key</li>
                 </ol>
               </div>
             </div>
 
             <div className="flex justify-between mt-6">
               <button onClick={handleReset} className="px-4 py-2 text-gray-600 hover:text-gray-800">
-                重置
+                Reset
               </button>
               <div className="space-x-2">
                 <button onClick={() => setIsOpen(false)} className="px-4 py-2 text-gray-600 hover:text-gray-800">
-                  取消
+                  Cancel
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={!supabaseUrl.trim() || !supabaseKey.trim()}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300"
                 >
-                  保存
+                  Save
                 </button>
               </div>
             </div>

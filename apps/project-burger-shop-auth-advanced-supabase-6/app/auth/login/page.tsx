@@ -12,10 +12,11 @@ import Settings from '../../components/Settings';
 import GoogleButton from '../../components/social-auth-buttons/GoogleButton';
 import GitHubButton from '../../components/social-auth-buttons/GitHubButton';
 import { createBrowserClient } from '@/lib/supabase/client';
-import { AlertCircle, CheckCircle2, Settings as SettingsIcon, Github, Chrome, Smartphone, LogIn, UserPlus } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Settings as SettingsIcon, LogIn, UserPlus } from 'lucide-react';
+import type { SupabaseClient, Session } from '@supabase/supabase-js';
 
 export default function LoginPage() {
-  const [supabase, setSupabase] = useState<any>(null);
+  const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
   const [supabaseUrl, setSupabaseUrl] = useState('');
   const [supabaseKey, setSupabaseKey] = useState('');
   const [message, setMessage] = useState<string | null>(null);
@@ -27,9 +28,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [optionalInfo, setOptionalInfo] = useState('');
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [loading, setLoading] = useState(false);
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
   useEffect(() => {
     const client = createBrowserClient();
     setSupabase(client);
@@ -70,17 +70,17 @@ export default function LoginPage() {
   async function signInWith(provider: 'google' | 'github') {
     setErr(null);
     setMessage(null);
-    if (!supabase) { setErr('请先在⚙️中配置 Supabase URL 与 Anon Key'); return; }
+    if (!supabase) { setErr('Please configure Supabase URL and anon key via ⚙️'); return; }
     const redirectTo = `${window.location.origin}/auth/callback`;
     // Preflight: don't redirect immediately; check provider config first
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo, skipBrowserRedirect: true as any }
-    } as any);
+      options: { redirectTo, skipBrowserRedirect: true }
+    });
     if (error) {
       const msg = String(error.message || 'Login failed');
       if (msg.toLowerCase().includes('provider is not enabled')) {
-        setErr(`该登录方式未在 Supabase Dashboard 启用。请前往 Authentication → Providers 启用 ${provider} 并保存，然后重试。`);
+        setErr(`Provider is not enabled in Supabase Dashboard. Go to Authentication → Providers, enable ${provider}, save, and retry.`);
       } else {
         setErr(msg);
       }
@@ -89,7 +89,7 @@ export default function LoginPage() {
     if (data?.url) {
       window.location.href = data.url;
     } else {
-      setErr('未获取到重定向地址，请检查配置');
+      setErr('No redirect URL obtained. Please check your configuration');
     }
   }
 
@@ -105,20 +105,28 @@ export default function LoginPage() {
   const handleGitHubLogin = () => signInWith('github');
 
 
+  async function requestPasswordReset() {
+    setErr(null); setMessage(null);
+    if (!supabase) { setErr('Supabase configuration missing or invalid. Use ⚙️ or check .env'); return; }
+    if (!email) { setErr('Please enter your email to reset password'); return; }
+    const redirectTo = `${window.location.origin}/auth/reset`;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) { setErr(error.message); } else { window.location.href = `/auth/reset/sent?email=${encodeURIComponent(email)}`; }
+  }
   async function emailSignIn() {
     setErr(null); setMessage(null); setLoading(true);
-    if (!supabase) { setErr('Supabase 配置缺失或无效，请点击右上角⚙️或检查 .env'); setLoading(false); return; }
-    if (!email || !password) { setErr('请输入邮箱与密码'); setLoading(false); return; }
+    if (!supabase) { setErr('Supabase configuration missing or invalid. Use ⚙️ or check .env'); setLoading(false); return; }
+    if (!email || !password) { setErr('Please enter email and password'); setLoading(false); return; }
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) { setErr(error.message); setLoading(false); }
-    else { setMessage('登录成功'); setLoading(false); }
+    else { setMessage('Signed in successfully'); setLoading(false); window.location.href = '/entry'; }
   }
 
   async function emailSignUp() {
     setErr(null); setMessage(null); setLoading(true);
-    if (!supabase) { setErr('Supabase 配置缺失或无效，请点击右上角⚙️或检查 .env'); setLoading(false); return; }
+    if (!supabase) { setErr('Supabase configuration missing or invalid. Use ⚙️ or check .env'); setLoading(false); return; }
     if (!email || !password || !name || !optionalInfo) {
-      setErr('注册需要填写：邮箱、密码、name、optional 信息（均为必填）'); setLoading(false); return;
+      setErr('Registration requires email, password, name, and optional info (all required)'); setLoading(false); return;
     }
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -137,10 +145,11 @@ export default function LoginPage() {
         }, { onConflict: 'id' });
         if (upsertErr) throw upsertErr;
       }
-    } catch (e: any) {
-      setErr(`注册成功但写入资料失败: ${e.message || e}`); setLoading(false); return;
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e ?? '');
+      setErr(`Sign-up succeeded but profile write failed: ${msg}`); setLoading(false); return;
     }
-    setMessage('注册成功，请前往邮箱验证（如开启）或直接访问受保护页面'); setLoading(false);
+    setMessage('Sign-up successful. Please verify your email (if enabled) or visit protected pages'); setLoading(false);
   }
 
   return (
@@ -170,7 +179,7 @@ export default function LoginPage() {
               <Alert className="border-yellow-200 bg-yellow-50">
                 <AlertCircle className="h-4 w-4 text-yellow-600" />
                 <AlertDescription className="text-yellow-800">
-                  Supabase 配置缺失或无效，请点击右上角⚙️设置或检查 .env
+                  Supabase configuration missing or invalid. Use ⚙️ Settings or check .env
                 </AlertDescription>
               </Alert>
             )}
@@ -217,6 +226,11 @@ export default function LoginPage() {
                   >
                     {loading ? 'Signing in...' : 'Sign In'}
                   </Button>
+                  <div className="flex justify-end">
+                    <Button variant="link" type="button" onClick={requestPasswordReset} className="px-0">
+                      Forgot password?
+                    </Button>
+                  </div>
                 </div>
               </TabsContent>
               
@@ -326,7 +340,7 @@ export default function LoginPage() {
               <Alert className="border-yellow-200 bg-yellow-50">
                 <AlertCircle className="h-4 w-4 text-yellow-600" />
                 <AlertDescription className="text-yellow-800">
-                  未检测到 Supabase 配置。请检查 .env 文件中的 NEXT_PUBLIC_SUPABASE_URL 和 NEXT_PUBLIC_SUPABASE_ANON_KEY。
+                  No Supabase configuration detected. Check .env: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
                 </AlertDescription>
               </Alert>
             )}
