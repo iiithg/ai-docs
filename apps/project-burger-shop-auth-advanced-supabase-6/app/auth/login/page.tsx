@@ -10,7 +10,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import Settings from '../../components/Settings';
 import GoogleButton from '../../components/social-auth-buttons/GoogleButton';
-import AppleButton from '../../components/social-auth-buttons/AppleButton';
 import GitHubButton from '../../components/social-auth-buttons/GitHubButton';
 import { createBrowserClient } from '@/lib/supabase/client';
 import { AlertCircle, CheckCircle2, Settings as SettingsIcon, Github, Chrome, Smartphone, LogIn, UserPlus } from 'lucide-react';
@@ -68,7 +67,7 @@ export default function LoginPage() {
       window.location.reload();
     }
   };
-  async function signInWith(provider: 'google' | 'github' | 'apple') {
+  async function signInWith(provider: 'google' | 'github') {
     setErr(null);
     setMessage(null);
     if (!supabase) { setErr('请先在⚙️中配置 Supabase URL 与 Anon Key'); return; }
@@ -104,7 +103,7 @@ export default function LoginPage() {
 
   const handleGoogleLogin = () => signInWith('google');
   const handleGitHubLogin = () => signInWith('github');
-  const handleAppleLogin = () => signInWith('apple');
+
 
   async function emailSignIn() {
     setErr(null); setMessage(null); setLoading(true);
@@ -289,7 +288,7 @@ export default function LoginPage() {
             <div className="space-y-3">
               <GoogleButton onClick={handleGoogleLogin} disabled={loading} />
               <GitHubButton onClick={handleGitHubLogin} disabled={loading} />
-              <AppleButton onClick={handleAppleLogin} disabled={loading} />
+
             </div>
           </CardContent>
           
