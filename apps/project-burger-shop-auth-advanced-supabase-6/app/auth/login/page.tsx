@@ -111,7 +111,14 @@ export default function LoginPage() {
     if (!email) { setErr('Please enter your email to reset password'); return; }
     const redirectTo = `${window.location.origin}/auth/reset`;
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
-    if (error) { setErr(error.message); } else { window.location.href = `/auth/reset/sent?email=${encodeURIComponent(email)}`; }
+    try {
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('reset_email', email);
+        sessionStorage.setItem('reset_status', error ? 'maybe' : 'sent');
+      }
+    } catch {}
+    if (error) { setErr(error.message); }
+    window.location.href = '/auth/reset/sent';
   }
   async function emailSignIn() {
     setErr(null); setMessage(null); setLoading(true);
@@ -128,10 +135,11 @@ export default function LoginPage() {
     if (!email || !password || !name || !optionalInfo) {
       setErr('Registration requires email, password, name, and optional info (all required)'); setLoading(false); return;
     }
+    if (password.length < 8) { setErr('Password must be at least 8 characters'); setLoading(false); return; }
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name, optional_info: optionalInfo } }
+      options: { data: { full_name: name, name, optional_info: optionalInfo } }
     });
     if (error) { setErr(error.message); setLoading(false); return; }
     const userId = data.user?.id;

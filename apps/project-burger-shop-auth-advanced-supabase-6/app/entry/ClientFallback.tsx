@@ -44,8 +44,8 @@ export default function EntryClientFallback() {
         setUserId(session.user.id);
         setEmail(session.user.email ?? null);
         const { data: profile } = await supabase.from('profiles').select('name').eq('id', session.user.id).maybeSingle();
-        const meta = session.user.user_metadata as { name?: string } | null;
-        const n = profile?.name || meta?.name || session.user.email || null;
+        const meta = session.user.user_metadata as { name?: string; full_name?: string } | null;
+        const n = profile?.name || meta?.full_name || meta?.name || session.user.email || null;
         setName(n);
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e ?? '');

@@ -1,14 +1,31 @@
 "use client";
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle2 } from 'lucide-react';
 
 export default function ResetRequestedPage() {
-  const params = useSearchParams();
-  const email = params.get('email');
-  const target = email || 'your email inbox';
+  const [masked, setMasked] = useState<string>('your email inbox');
+  const [status, setStatus] = useState<'sent' | 'maybe'>('sent');
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('reset_email') || '';
+      const st = (sessionStorage.getItem('reset_status') as 'sent' | 'maybe') || 'sent';
+      setStatus(st);
+      if (raw) {
+        const at = raw.indexOf('@');
+        if (at > 0) {
+          const name = raw.slice(0, at);
+          const domain = raw.slice(at + 1);
+          const maskedName = name.length <= 2 ? `${name[0]}*` : `${name[0]}${'*'.repeat(Math.max(1, name.length - 2))}${name[name.length - 1]}`;
+          setMasked(`${maskedName}@${domain}`);
+        } else {
+          setMasked('your email inbox');
+        }
+      }
+    } catch {}
+  }, []);
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -21,7 +38,10 @@ export default function ResetRequestedPage() {
             <Alert className="border-green-200 bg-green-50">
               <CheckCircle2 className="h-4 w-4 text-green-600" />
               <AlertDescription className="text-green-800">
-                A password reset email was sent to {target}. Please open the email and click the link to continue.
+                {status === 'sent'
+                  ? <>A password reset email was sent to {masked}. Please open the email and click the link to continue.</>
+                  : <>If that email is associated with an account, you will receive a password reset link. Please check your inbox.</>
+                }
               </AlertDescription>
             </Alert>
           </CardContent>

@@ -53,6 +53,7 @@ export default function ResetPasswordPage() {
     if (!session) { setErr('Open the password reset link from your email to continue'); setLoading(false); return; }
     if (!password || !confirm) { setErr('Please enter and confirm your new password'); setLoading(false); return; }
     if (password !== confirm) { setErr('Passwords do not match'); setLoading(false); return; }
+    if (password.length < 8) { setErr('Password must be at least 8 characters'); setLoading(false); return; }
     const { error } = await supabase.auth.updateUser({ password });
     if (error) { setErr(error.message); setLoading(false); return; }
     setMessage('Password updated. You can now sign in.'); setLoading(false);

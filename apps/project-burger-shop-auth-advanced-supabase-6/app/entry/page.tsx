@@ -25,8 +25,8 @@ export default async function EntryPage() {
       .select('name')
       .eq('id', user.id)
       .maybeSingle();
-    const meta = user.user_metadata as { name?: string } | null;
-    displayName = profile?.name || meta?.name || user.email || null;
+    const meta = user.user_metadata as { name?: string; full_name?: string } | null;
+    displayName = profile?.name || meta?.full_name || meta?.name || user.email || null;
     emailForUser = user.email ?? null;
   }
 
