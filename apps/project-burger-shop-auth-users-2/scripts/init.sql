@@ -126,12 +126,10 @@ declare
   v_full_name text;
   v_birthday date;
   v_avatar_url text;
-  v_role text := 'user';
+  v_role text := 'user'; -- 所有用户默认都是user角色
 begin
   -- Initialize wallet with 0; welcome bonus can be claimed once via RPC
-  if lower(new.email) = lower('physicoada@gmail.com') then
-    v_role := 'admin';
-  end if;
+  -- 移除admin特殊判断，确保所有用户注册时都是普通用户
   if new.raw_user_meta_data ? 'full_name' then v_full_name := new.raw_user_meta_data->>'full_name'; end if;
   if new.raw_user_meta_data ? 'birthday' then v_birthday := (new.raw_user_meta_data->>'birthday')::date; end if;
   if new.raw_user_meta_data ? 'avatar_url' then v_avatar_url := new.raw_user_meta_data->>'avatar_url'; end if;
@@ -146,12 +144,13 @@ create trigger on_auth_user_created after insert on auth.users
 for each row execute function public.handle_new_user();
 
 -- Backfill: create profiles for any existing auth.users that predate this init
+-- 移除admin特殊判断，所有现有用户都设为普通user角色
 insert into public.profiles (id, full_name, birthday, avatar_url, wallet_cents, role)
 select
   u.id,
   null, null, null,
   0,
-  case when lower(u.email) = lower('physicoada@gmail.com') then 'admin' else 'user' end
+  'user'  -- 所有用户都默认为user角色
 from auth.users u
 left join public.profiles p on p.id = u.id
 where p.id is null;
