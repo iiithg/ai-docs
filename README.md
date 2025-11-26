@@ -214,10 +214,16 @@ npm run dev
 ```
 
 **Features:**
-- Advanced authentication flows
-- Social logins (Google, GitHub, etc.)
-- Multi-factor authentication (MFA)
-- Row-level security (RLS) policies
+- Google/GitHub OAuth and email/password login
+- Password reset flow (email link → reset page)
+- Dynamic Supabase configuration via Settings (localStorage) with `.env` fallback
+- Protected pages with middleware cookie refresh and in-page guards
+- Row-level security (RLS) policies for `public.profiles`
+
+Additional setup:
+- Add redirect URLs in Supabase Dashboard → Authentication → URL configuration:
+  - `http://localhost:3000/auth/callback`
+  - `http://localhost:3000/auth/reset`
 
 ---
 

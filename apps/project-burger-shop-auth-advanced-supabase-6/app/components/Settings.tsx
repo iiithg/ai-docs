@@ -8,7 +8,6 @@ interface SettingsProps {
   children: React.ReactNode;
 }
 
-// 简化版设置面板：仅 Supabase URL 与 Anon Key
 export default function Settings({ onSettingsChange, currentUrl = '', currentKey = '', children }: SettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [url, setUrl] = useState(currentUrl);

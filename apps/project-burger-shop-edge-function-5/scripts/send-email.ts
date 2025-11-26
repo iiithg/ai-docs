@@ -1,63 +1,105 @@
-// Setup type definitions for built-in Supabase Runtime APIs
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+
+// CORS headers for preflight requests
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST,OPTIONS',
-  'Access-Control-Max-Age': '86400',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-interface Body {
-  to: string | string[];
-  subject?: string;
-  content?: string;
-  templateName?: 'welcome' | 'reset-password' | 'invite-code';
-  templateData?: Record<string, unknown>;
+// Resend API call helper
+async function callResend(to: string, subject: string, html: string) {
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${RESEND_API_KEY}`,
+    },
+    body: JSON.stringify({
+      from: 'onboarding@resend.dev', // NOTE: This must be a verified domain in Resend
+      to,
+      subject,
+      html,
+    }),
+  });
+
+  if (!res.ok) {
+    // Handle HTTP errors (e.g., 400, 401, 500)
+    const errorData = await res.json().catch(() => ({ message: 'Network response was not ok' }));
+    return { error: { message: errorData.message || `HTTP error! status: ${res.status}` } };
+  }
+
+  return await res.json();
 }
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
-const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-
-const templates = {
-  welcome: (data: any) => ({ subject: `Welcome to ${data?.appName || 'Our App'}!`, html: `<h2>Welcome ${data?.fullName || 'there'}</h2>` }),
-  'reset-password': (data: any) => ({ subject: 'Reset Your Password', html: `<p>Reset: ${data?.resetLink || '#'}</p>` }),
-  'invite-code': (data: any) => ({ subject: 'Your Invite Code', html: `<p>Code: <strong>${data?.inviteCode || ''}</strong></p>` }),
-} as const;
-
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
+  console.log(`[DEBUG] === New request received ===`);
+  console.log(`[DEBUG] Method: ${req.method}`);
+  console.log(`[DEBUG] URL: ${req.url}`);
+  
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
+
   try {
-    const { to, subject, content, templateName, templateData }: Body = await req.json();
-    if (!to) return new Response(JSON.stringify({ error: 'to is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const body = await req.json();
+    console.log(`[DEBUG] Request body:`, JSON.stringify(body, null, 2));
+    const { to, subject, html } = body;
 
-    const sb = createClient(SUPABASE_URL, SERVICE_ROLE);
-    const recipients = Array.isArray(to) ? to : [to];
-
-    let finalSubject = subject || '';
-    let finalContent = content || '';
-    if (templateName && templates[templateName]) {
-      const t = templates[templateName](templateData || {});
-      finalSubject = t.subject; finalContent = t.html;
+    if (!to) {
+      return new Response(JSON.stringify({ error: '"to" field is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    await Promise.allSettled(
-      recipients.map((email) => sb.from('email_queue').insert({
-        to_email: email,
-        subject: finalSubject,
-        content: finalContent,
-        template_name: templateName,
-        template_data: templateData || {},
-        status: 'pending'
-      }))
-    );
+    if (!subject) {
+      return new Response(JSON.stringify({ error: '"subject" field is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-    return new Response(JSON.stringify({ success: true, queuedCount: recipients.length, recipients }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-  } catch (err) {
-    const msg = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
-    return new Response(JSON.stringify({ error: msg }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    if (!html) {
+      return new Response(JSON.stringify({ error: '"html" field is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log(`[DEBUG] About to send email to: ${to}`);
+    console.log(`[DEBUG] Subject: ${subject}`);
+    console.log(`[DEBUG] HTML preview: ${html.substring(0, 200)}...`);
+
+    // Send the email
+    const resendResponse = await callResend(to, subject, html);
+    console.log(`[DEBUG] Resend API response:`, JSON.stringify(resendResponse, null, 2));
+
+    // Check if Resend API returned an error
+    if (!resendResponse || resendResponse.error) {
+      const errorMessage = resendResponse?.error?.message || 'Resend API call failed';
+      console.log(`[DEBUG] Resend API error: ${errorMessage}`);
+      return new Response(JSON.stringify({ error: errorMessage }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log(`[DEBUG] Email sent successfully! ID: ${resendResponse.id}`);
+
+    // Return success response with Resend data
+    return new Response(JSON.stringify(resendResponse), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'An unknown error occurred';
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });
