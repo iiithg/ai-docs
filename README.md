@@ -4,7 +4,7 @@ A collection of simple demos demonstrating the basic features of Supabase using 
 
 ## 🎯 About This Project
 
-This repository is designed to provide a hands-on learning experience for developers looking to get started with Supabase. Each demo is a self-contained Next.js application that showcases a specific feature, from basic CRUD operations to more advanced topics like real-time subscriptions and edge functions.
+This repository provides hands-on learning experience for developers getting started with Supabase. Each demo is a self-contained application showcasing specific features, from basic CRUD operations to advanced real-time subscriptions and edge functions.
 
 **Tech Stack:**
 
@@ -26,6 +26,7 @@ Project5-Supabase-Demos/
 │   ├── project-burger-shop-auth-advanced-supabase-6/  # Advanced Auth with Supabase
 │   ├── project-burger-shop-auth-advanced-clerk-7/     # Advanced Auth with Clerk
 │   └── sql-examples/                                  # Standalone SQL lessons (no frontend)
+├── apps_snakegame/                                    # Snake game built with React and Vite
 ├── docs/                                              # Documentation and tutorials
 ├── AGENTS.md                                          # Repository-wide contributor guide
 └── CLAUDE.md                                          # Development guidelines for Claude Code
@@ -247,6 +248,27 @@ npm run dev
 - Organization and multi-tenancy support
 - Seamless session management
 
+---
+
+### 9. apps_snakegame
+**Modern Snake Game with React and Vite**
+
+```bash
+cd apps_snakegame
+npm install
+npm run dev
+```
+
+**Features:**
+- React 18 with modern hooks and concurrent features
+- Vite 7 for ultra-fast development and building
+- Enhanced food mechanics with different bean types
+- Smooth animations and modern visual effects
+- Web Audio API for dynamic sound effects
+- Fully responsive design for mobile devices
+- Ghost mode for wall-phasing ability
+- Strategic gameplay with power-ups and speed modifiers
+
 ## 🛠️ Development Workflow
 
 ### Prerequisites
@@ -326,7 +348,8 @@ We recommend following this order to get the most out of these demos:
 5.  **project-burger-shop-storage-uploads-4**: Understand how to manage file storage.
 6.  **project-burger-shop-edge-function-5**: Get started with serverless logic.
 7.  **project-burger-shop-auth-advanced-supabase-6**: Explore advanced authentication patterns with Supabase.
-8.  **project-burger-shop-auth-advanced-clerk-7**: Learn how to integrate a third-party auth provider like Clerk.
+8. **project-burger-shop-auth-advanced-clerk-7**: Learn how to integrate a third-party auth provider like Clerk.
+9. **apps_snakegame**: Enjoy a fun break with a modern React-based Snake game demonstrating advanced React patterns.
 
 ## 🤝 Contributing
 
@@ -334,12 +357,12 @@ Contributions are welcome! If you have an idea for a new demo or an improvement 
 
 ### How to Contribute
 
-1.  Fork the repository.
-2.  Create a new branch (`git checkout -b feature/your-feature`).
-3.  Make your changes.
-4.  Commit your changes (`git commit -m 'Add some feature'`).
-5.  Push to the branch (`git push origin feature/your-feature`).
-6.  Open a pull request.
+1. Fork the repository.
+2. Create a new branch (`git checkout -b feature/your-feature`).
+3. Make your changes.
+4. Commit your changes (`git commit -m 'Add some feature'`).
+5. Push to the branch (`git push origin feature/your-feature`).
+6. Open a pull request.
 
 ## 📄 License
 

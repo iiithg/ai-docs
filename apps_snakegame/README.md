@@ -1,102 +1,102 @@
-# 🐍 超级蛇游戏 (Super Snake Game)
+# 🐍 Super Snake Game
 
-一个使用最新 React 18 和 Vite 架构构建的现代化蛇游戏，具有改进的豆子机制和丰富的游戏体验。
+A modern Snake game built with React 18 and Vite architecture, featuring enhanced food mechanics and rich gameplay experience.
 
-## ✨ 游戏特性
+## ✨ Game Features
 
-### 🎯 改进的豆子机制
-- **普通豆子** (+10分) - 红色，基础得分
-- **金色豆子** (+50分) - 金黄色，高价值目标，带旋转动画
-- **速度豆子** (+25分) - 青色，临时加速效果
-- **缓慢豆子** (+15分) - 浅绿色，临时减速效果  
-- **幽灵豆子** (+30分) - 紫色，临时穿墙能力
+### 🎯 Enhanced Food Mechanics
+- **Normal Beans** (+10 points) - Red, basic scoring
+- **Golden Beans** (+50 points) - Golden yellow, high-value targets with rotating animation
+- **Speed Beans** (+25 points) - Cyan, temporary speed boost effect
+- **Slow Beans** (+15 points) - Light green, temporary slow-down effect
+- **Ghost Beans** (+30 points) - Purple, temporary wall-phasing ability
 
-### 🎮 游戏玩法
-- 使用方向键控制蛇的移动
-- 按空格键暂停/继续游戏
-- 收集不同类型的豆子获得特殊效果
-- 幽灵模式下可以穿墙而过
-- 食物有过期机制，增加策略性
+### 🎮 Gameplay
+- Use arrow keys to control snake movement
+- Press spacebar to pause/resume the game
+- Collect different bean types for special effects
+- Ghost mode allows passing through walls
+- Food items have expiration mechanics for added strategy
 
-### 🎨 视觉效果
-- 现代化的渐变背景和毛玻璃效果
-- 流畅的动画和过渡效果
-- 不同豆子类型有独特的视觉表现
-- 响应式设计，支持移动设备
-- 幽灵模式下的半透明效果
+### 🎨 Visual Effects
+- Modern gradient backgrounds and glassmorphism effects
+- Smooth animations and transitions
+- Unique visual representations for different bean types
+- Responsive design supporting mobile devices
+- Semi-transparent effects during ghost mode
 
-### 🔊 音效系统
-- 吃到不同豆子时播放不同音效
-- 游戏结束时播放失败音效
-- 使用Web Audio API生成音效
+### 🔊 Sound System
+- Different sound effects when eating various beans
+- Game over failure sound effects
+- Web Audio API for dynamic sound generation
 
-### 🛠️ 技术特性
-- **React 18** - 最新的React版本，支持并发特性
-- **Vite 7** - 超快的构建工具和开发服务器
-- **现代CSS** - 使用CSS变量、渐变、动画等现代特性
-- **React Hooks** - 使用useState、useEffect、useCallback等最佳实践
-- **性能优化** - 使用useCallback避免不必要的重渲染
-- **代码质量** - 通过ESLint检查确保代码质量
+### 🛠️ Technical Features
+- **React 18** - Latest React version with concurrent features
+- **Vite 7** - Ultra-fast build tool and development server
+- **Modern CSS** - CSS variables, gradients, animations, and modern features
+- **React Hooks** - Best practices using useState, useEffect, useCallback
+- **Performance Optimization** - useCallback to avoid unnecessary re-renders
+- **Code Quality** - ESLint checks for code quality assurance
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
 ```bash
-# 安装依赖
+# Install dependencies
 npm install
 
-# 启动开发服务器
+# Start development server
 npm run dev
 
-# 构建生产版本
+# Build production version
 npm run build
 
-# 预览生产版本
+# Preview production version
 npm run preview
 ```
 
-## 🎯 游戏控制
+## 🎯 Game Controls
 
-- **↑ ↓ ← →** - 控制蛇的移动方向
-- **空格键** - 暂停/继续游戏
-- **开始按钮** - 开始新游戏
-- **重新开始** - 游戏结束后重新开始
+- **↑ ↓ ← →** - Control snake movement direction
+- **Spacebar** - Pause/resume game
+- **Start Button** - Begin new game
+- **Restart** - Restart after game over
 
-## 🌟 游戏亮点
+## 🌟 Game Highlights
 
-1. **策略性豆子系统** - 不同豆子有不同的分值和效果，玩家需要权衡风险和收益
-2. **动态难度** - 特殊豆子的出现增加了游戏的不可预测性和趣味性
-3. **现代化UI** - 使用最新的CSS技术和设计理念
-4. **流畅体验** - 60fps的游戏循环，响应式的控制
-5. **可扩展架构** - 易于添加新的豆子类型和游戏模式
+1. **Strategic Bean System** - Different beans offer different scores and effects, requiring players to weigh risks and rewards
+2. **Dynamic Difficulty** - Special beans increase unpredictability and enjoyment
+3. **Modern UI** - Latest CSS technologies and design principles
+4. **Smooth Experience** - 60fps game loop with responsive controls
+5. **Extensible Architecture** - Easy to add new bean types and game modes
 
-## 🔧 开发说明
+## 🔧 Development Notes
 
-项目结构：
+Project structure:
 ```
 src/
-├── components/          # React组件
-│   ├── SnakeGame.jsx   # 主游戏组件
-│   └── SnakeGame.css   # 游戏样式
-├── utils/              # 工具函数
-│   └── SoundManager.js # 音效管理器
-├── App.jsx             # 应用入口
-└── main.jsx            # 应用挂载点
+├── components/          # React components
+│   ├── SnakeGame.jsx   # Main game component
+│   └── SnakeGame.css   # Game styles
+├── utils/              # Utility functions
+│   └── SoundManager.js # Sound effects manager
+├── App.jsx             # Application entry point
+└── main.jsx            # Application mount point
 ```
 
-## 📱 响应式支持
+## 📱 Responsive Support
 
-游戏完全支持移动设备，在小屏幕上会自动调整：
-- 游戏板尺寸适配
-- 按钮和文字大小调整
-- 触摸友好的交互设计
+The game fully supports mobile devices, automatically adjusting for small screens:
+- Game board size adaptation
+- Button and text size adjustments
+- Touch-friendly interaction design
 
-## 🎵 音效技术
+## 🎵 Sound Technology
 
-使用Web Audio API动态生成音效，无需外部音频文件：
-- 不同频率和波形类型
-- 动态音量控制
-- 流畅的音效过渡
+Uses Web Audio API for dynamic sound generation without external audio files:
+- Different frequencies and waveform types
+- Dynamic volume control
+- Smooth sound transitions
 
 ---
 
-享受游戏吧！🎮✨
+Enjoy the game! 🎮✨

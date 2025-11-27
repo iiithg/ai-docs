@@ -14,18 +14,25 @@ This is a collection of Supabase demonstration projects featuring a burger shop 
 - `apps/project-burger-shop-realtime-orders-3/` - Realtime chat and presence cursors
 - `apps/project-burger-shop-storage-uploads-4/` - File storage for avatars with anonymous/guest uploads
 - `apps/project-burger-shop-edge-function-5/` - Edge function demos with LLM chat, email service, user registration
-- `apps/project-burger-shop-small/` - Combined features 1+2 (placeholder)
-- `apps/project-burger-shop-big/` - Combined features 1-5 (placeholder)
+- `apps/project-burger-shop-auth-advanced-supabase-6/` - Advanced authentication with Supabase OAuth
+- `apps/project-burger-shop-auth-advanced-clerk-7/` - Advanced authentication with Clerk integration
+- `apps_snakegame/` - Modern React 18 + Vite Snake game with enhanced gameplay mechanics
 
 ### Architecture
 
-All apps share:
+All burger shop apps share:
 
 - **Framework**: Next.js 14 with TypeScript
 - **Styling**: Tailwind CSS
 - **Database**: Supabase (PostgreSQL with real-time subscriptions)
-
 - **Language**: TypeScript with 2-space indentation, single quotes, semicolons
+
+The snake game uses a different stack:
+
+- **Framework**: React 18 with Vite 7
+- **Styling**: Modern CSS with CSS variables and animations
+- **Database**: None (client-side only)
+- **Language**: JavaScript with modern ES6+ features
 
 Each demo app is scaffolded from `burger-template` and focuses on a single feature set. Database initialization is handled through SQL scripts in each app's `scripts/` directory.
 
@@ -38,6 +45,11 @@ The auth-users app demonstrates a complete authentication system with:
 - **Profile System**: Automated profile creation with triggers on user signup
 - **Role-based Access Control**: User and admin roles with RLS policies
 - **Wallet Integration**: Atomic financial operations via PostgreSQL RPCs
+
+### Advanced Authentication Patterns
+
+- **auth-advanced-supabase-6**: OAuth integration (Google/GitHub), password reset flows, middleware-based session management, and dynamic configuration
+- **auth-advanced-clerk-7**: Third-party auth provider integration with pre-built UI components, organization support, and multi-tenancy
 
 ## Database Service Layer
 
@@ -82,6 +94,19 @@ npm install          # Install dependencies
 npm run dev          # Start development server (localhost:3000)
 npm run build        # Production build
 npm run start        # Start production server
+npm run lint         # ESLint checks
+```
+
+### Snake Game Development (apps_snakegame)
+
+The snake game uses Vite instead of Next.js:
+
+```bash
+cd apps_snakegame
+npm install          # Install dependencies
+npm run dev          # Start development server (localhost:5173)
+npm run build        # Production build
+npm run preview      # Preview production build
 npm run lint         # ESLint checks
 ```
 
