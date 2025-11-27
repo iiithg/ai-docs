@@ -297,7 +297,7 @@
 .legend-color.slow { background: #a8e6cf; }
 .legend-color.ghost { background: #b19cd9; }
 
-/* 响应式设计 */
+/* Responsive design */
 @media (max-width: 768px) {
   .game-board {
     grid-template-columns: repeat(20, 15px);

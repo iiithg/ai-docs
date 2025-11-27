@@ -1,4 +1,4 @@
-// 音效管理器
+// Sound effects manager
 class SoundManager {
   constructor() {
     this.sounds = {};
@@ -44,7 +44,7 @@ class SoundManager {
     if (!this.initialized) {
       this.init();
     }
-    // 如果上下文被挂起（通常是因为没有用户交互），尝试恢复
+    // If context is suspended (usually due to no user interaction), try to resume
     if (this.audioContext && this.audioContext.state === 'suspended') {
       this.audioContext.resume().catch(() => {});
     }

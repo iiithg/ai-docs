@@ -8,7 +8,7 @@ const INITIAL_SNAKE = [{ x: 10, y: 10 }];
 const INITIAL_DIRECTION = { x: 0, y: -1 };
 const GAME_SPEED = 150;
 
-// 豆子类型
+// Food types
 const FOOD_TYPES = {
   NORMAL: { type: 'normal', points: 10, color: '#ff6b6b', duration: -1 },
   GOLDEN: { type: 'golden', points: 50, color: '#ffd93d', duration: 5000 },
@@ -33,19 +33,19 @@ const SnakeGame = () => {
   const lastUpdateTimeRef = useRef(0);
   const previousScoreRef = useRef(0);
 
-  // 监听分数变化，触发特效
+  // Listen for score changes, trigger effects
   useEffect(() => {
     if (score > 0 && score > previousScoreRef.current) {
       const milestone = Math.floor(score / 100) * 100;
       const prevMilestone = Math.floor(previousScoreRef.current / 100) * 100;
-      
+
       if (milestone > prevMilestone) {
-        // 触发礼花特效
+        // Trigger confetti effect
         triggerConfetti();
-        // 显示里程碑提示
+        // Show milestone notification
         setShowMilestone(milestone);
         setTimeout(() => setShowMilestone(null), 3000);
-        // 播放特殊音效
+        // Play special sound effect
         SoundManager.play('goldenFood');
       }
     }
@@ -81,10 +81,10 @@ const SnakeGame = () => {
     }, 250);
   };
 
-  // 生成随机食物
+  // Generate random food
   const generateFood = useCallback(() => {
     const foodTypes = Object.values(FOOD_TYPES);
-    const weights = [0.6, 0.15, 0.1, 0.1, 0.05]; // 普通豆子60%概率，金色15%，其他较少
+    const weights = [0.6, 0.15, 0.1, 0.1, 0.05]; // Normal food 60% probability, golden 15%, others less common
     
     let random = Math.random();
     let selectedType = foodTypes[0];
@@ -108,24 +108,24 @@ const SnakeGame = () => {
     return newFood;
   }, []);
 
-  // 检查食物是否过期
+  // Check if food has expired
   const checkFoodExpiry = useCallback((foods) => {
     const now = Date.now();
     return foods.filter(food => {
-      if (food.duration === -1) return true; // 普通豆子不过期
+      if (food.duration === -1) return true; // Normal food doesn't expire
       return now - food.createdAt < food.duration;
     });
   }, []);
 
-  // 应用食物效果
+  // Apply food effects
   const applyFoodEffect = useCallback((effect, duration) => {
     switch (effect) {
       case 'speed':
-        setGameSpeed(GAME_SPEED * 0.6); // 加速
+        setGameSpeed(GAME_SPEED * 0.6); // Speed up
         setTimeout(() => setGameSpeed(GAME_SPEED), duration);
         break;
       case 'slow':
-        setGameSpeed(GAME_SPEED * 1.5); // 减速
+        setGameSpeed(GAME_SPEED * 1.5); // Slow down
         setTimeout(() => setGameSpeed(GAME_SPEED), duration);
         break;
       case 'ghost':
@@ -135,16 +135,16 @@ const SnakeGame = () => {
     }
   }, []);
 
-  // 移动蛇
+  // Move snake
   const moveSnake = useCallback(() => {
     setSnake(currentSnake => {
       const newSnake = [...currentSnake];
       const head = { ...newSnake[0] };
-      
+
       head.x += direction.x;
       head.y += direction.y;
 
-      // 检查边界碰撞（幽灵模式可以穿墙）
+      // Check boundary collision (ghost mode can pass through walls)
       if (!isGhostMode) {
         if (head.x < 0 || head.x >= BOARD_SIZE || head.y < 0 || head.y >= BOARD_SIZE) {
           SoundManager.play('gameOver');
@@ -152,12 +152,12 @@ const SnakeGame = () => {
           return currentSnake;
         }
       } else {
-        // 幽灵模式穿墙
+        // Ghost mode wall phasing
         head.x = (head.x + BOARD_SIZE) % BOARD_SIZE;
         head.y = (head.y + BOARD_SIZE) % BOARD_SIZE;
       }
 
-      // 检查自身碰撞（幽灵模式不会撞到自己）
+      // Check self collision (ghost mode won't hit itself)
       if (!isGhostMode && newSnake.some(segment => segment.x === head.x && segment.y === head.y)) {
         SoundManager.play('gameOver');
         setGameOver(true);
@@ -166,12 +166,12 @@ const SnakeGame = () => {
 
       newSnake.unshift(head);
 
-      // 检查是否吃到食物
+      // Check if food is eaten
       const eatenFood = foods.find(food => food.x === head.x && food.y === head.y);
       if (eatenFood) {
         setScore(prev => prev + eatenFood.points);
-        
-        // 播放音效
+
+        // Play sound effect
         if (eatenFood.type === 'golden') {
           SoundManager.play('goldenFood');
         } else if (eatenFood.effect === 'speed') {
@@ -181,13 +181,13 @@ const SnakeGame = () => {
         } else {
           SoundManager.play('eat');
         }
-        
-        // 应用食物效果
+
+        // Apply food effect
         if (eatenFood.effect) {
           applyFoodEffect(eatenFood.effect, eatenFood.duration);
         }
 
-        // 移除被吃的食物并生成新食物
+        // Remove eaten food and generate new food
         setFoods(currentFoods => {
           const filteredFoods = currentFoods.filter(f => f.id !== eatenFood.id);
           const newFood = generateFood();
@@ -201,19 +201,19 @@ const SnakeGame = () => {
     });
   }, [direction, isGhostMode, foods, generateFood, applyFoodEffect]);
 
-  // 游戏循环
+  // Game loop
   const gameLoop = useCallback((currentTime) => {
     if (!isPaused && currentTime - lastUpdateTimeRef.current >= gameSpeed) {
       moveSnake();
       lastUpdateTimeRef.current = currentTime;
     }
-    
+
     if (gameStarted && !gameOver) {
       gameLoopRef.current = requestAnimationFrame(gameLoop);
     }
   }, [gameStarted, gameOver, gameSpeed, isPaused, moveSnake]);
 
-  // 初始化食物
+  // Initialize food
   useEffect(() => {
     if (gameStarted && !gameOver) {
       const initialFoods = Array.from({ length: 3 }, () => generateFood());
@@ -221,7 +221,7 @@ const SnakeGame = () => {
     }
   }, [gameStarted, gameOver, generateFood]);
 
-  // 键盘控制
+  // Keyboard controls
   const handleKeyPress = useCallback((e) => {
     if (!gameStarted) return;
 
@@ -245,7 +245,7 @@ const SnakeGame = () => {
     }
   }, [gameStarted, gameOver, direction]);
 
-  // 开始游戏
+  // Start game
   const startGame = () => {
     setSnake(INITIAL_SNAKE);
     setDirection(INITIAL_DIRECTION);
@@ -256,7 +256,7 @@ const SnakeGame = () => {
     setIsGhostMode(false);
   };
 
-  // 重新开始
+  // Restart game
   const restartGame = () => {
     startGame();
   };
@@ -277,7 +277,7 @@ const SnakeGame = () => {
     };
   }, [gameStarted, gameOver, gameLoop]);
 
-  // 定期清理过期食物
+  // Periodic cleanup of expired food
   useEffect(() => {
     const interval = setInterval(() => {
       setFoods(checkFoodExpiry);
@@ -285,7 +285,7 @@ const SnakeGame = () => {
     return () => clearInterval(interval);
   }, [checkFoodExpiry]);
 
-  // 渲染游戏板
+  // Render game board
   const renderBoard = () => {
     const board = [];
     for (let y = 0; y < BOARD_SIZE; y++) {
@@ -325,17 +325,17 @@ const SnakeGame = () => {
   return (
     <div className="snake-game">
       <div className="game-header">
-        <h1>🐍 超级蛇游戏</h1>
+        <h1>🐍 Super Snake Game</h1>
         <div className="game-stats">
-          <div className="score">得分: {score}</div>
-          <div className="length">长度: {snake.length}</div>
+          <div className="score">Score: {score}</div>
+          <div className="length">Length: {snake.length}</div>
           {showMilestone && (
             <div className="milestone-notification">
-              🎉 突破 {showMilestone} 分! 🎉
+              🎉 Reached {showMilestone} points! 🎉
             </div>
           )}
-          {isGhostMode && <div className="effect-indicator ghost">👻 幽灵模式</div>}
-          {isPaused && <div className="effect-indicator paused">⏸️ 暂停</div>}
+          {isGhostMode && <div className="effect-indicator ghost">👻 Ghost Mode</div>}
+          {isPaused && <div className="effect-indicator paused">⏸️ Paused</div>}
         </div>
       </div>
 
@@ -348,41 +348,41 @@ const SnakeGame = () => {
       <div className="game-controls">
         {!gameStarted ? (
           <button onClick={startGame} className="start-btn">
-            开始游戏
+            Start Game
           </button>
         ) : gameOver ? (
           <div className="game-over">
-            <h2>游戏结束!</h2>
-            <p>最终得分: {score}</p>
+            <h2>Game Over!</h2>
+            <p>Final Score: {score}</p>
             <button onClick={restartGame} className="restart-btn">
-              重新开始
+              Restart
             </button>
           </div>
         ) : (
           <div className="game-info">
-            <p>使用方向键控制蛇的移动</p>
-            <p>按空格键暂停/继续游戏</p>
+            <p>Use arrow keys to control snake movement</p>
+            <p>Press spacebar to pause/resume game</p>
             <div className="food-legend">
-              <h3>豆子类型:</h3>
+              <h3>Food Types:</h3>
               <div className="legend-item">
                 <span className="legend-color normal"></span>
-                <span>普通豆子 (+10分)</span>
+                <span>Normal Food (+10 points)</span>
               </div>
               <div className="legend-item">
                 <span className="legend-color golden"></span>
-                <span>金色豆子 (+50分)</span>
+                <span>Golden Food (+50 points)</span>
               </div>
               <div className="legend-item">
                 <span className="legend-color speed"></span>
-                <span>速度豆子 (+25分, 加速)</span>
+                <span>Speed Food (+25 points, speed up)</span>
               </div>
               <div className="legend-item">
                 <span className="legend-color slow"></span>
-                <span>缓慢豆子 (+15分, 减速)</span>
+                <span>Slow Food (+15 points, slow down)</span>
               </div>
               <div className="legend-item">
                 <span className="legend-color ghost"></span>
-                <span>幽灵豆子 (+30分, 穿墙)</span>
+                <span>Ghost Food (+30 points, wall phasing)</span>
               </div>
             </div>
           </div>
