@@ -1,9 +1,9 @@
--- 文件: init.sql
+-- File: init.sql
 
--- 1. 为同步的 Clerk 用户创建 `users` 表
--- 这个表将存储从 Clerk Webhooks 推送过来的用户数据。
+-- 1. Create `users` table for synced Clerk users
+-- This table will store user data pushed from Clerk Webhooks.
 CREATE TABLE public.users (
-  id TEXT NOT NULL PRIMARY KEY, -- 对应 Clerk User ID
+  id TEXT NOT NULL PRIMARY KEY, -- Corresponds to Clerk User ID
   email TEXT,
   first_name TEXT,
   last_name TEXT,
@@ -12,19 +12,19 @@ CREATE TABLE public.users (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2. 启用表的行级安全 (RLS)
--- 这是一个重要的安全措施，确保用户默认无法访问任何数据。
+-- 2. Enable Row Level Security (RLS) on the table
+-- This is an important security measure to ensure users cannot access any data by default.
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
--- 3. 创建 RLS 策略
--- 策略1: 允许认证用户读取自己的用户信息。
--- `auth.jwt()->>'sub'` 会从 Clerk 提供的 JWT 中提取用户 ID。
+-- 3. Create RLS policies
+-- Policy 1: Allow authenticated users to read their own user info.
+-- `auth.jwt()->>'sub'` extracts the user ID from the JWT provided by Clerk.
 CREATE POLICY "Authenticated users can view their own user record"
 ON public.users FOR SELECT
 TO authenticated
 USING ( (SELECT auth.jwt()->>'sub') = id );
 
--- 策略2: 允许用户更新自己的信息。
+-- Policy 2: Allow users to update their own info.
 CREATE POLICY "Authenticated users can update their own user record"
 ON public.users FOR UPDATE
 TO authenticated

@@ -1,18 +1,18 @@
-// 文件路径: supabase/functions/clerk-webhooks/index.ts
+// File path: supabase/functions/clerk-webhooks/index.ts
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { Webhook } from 'npm:svix'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-// 从环境变量中获取 Clerk Webhook 签名密钥
+// Get Clerk Webhook signing secret from environment variables
 const CLERK_WEBHOOK_SECRET = Deno.env.get('CLERK_WEBHOOK_SECRET')
 
 if (!CLERK_WEBHOOK_SECRET) {
   throw new Error('CLERK_WEBHOOK_SECRET is not set in environment variables')
 }
 
-// 使用 service_role key 初始化 Supabase admin 客户端
-// 这样可以在 Edge Function 中绕过 RLS 策略，对数据库进行管理操作
+// Initialize Supabase admin client using service_role key
+// This allows bypassing RLS policies in Edge Function to perform database management operations
 const supabaseAdmin = createClient(
   Deno.env.get('SUPABASE_URL')!,
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -20,7 +20,7 @@ const supabaseAdmin = createClient(
 
 serve(async (req) => {
   try {
-    // 1. 从请求头中获取 Svix 签名信息
+    // 1. Get Svix signature info from request headers
     const headers = Object.fromEntries(req.headers)
     const svix_id = headers['svix-id']
     const svix_timestamp = headers['svix-timestamp']
@@ -33,7 +33,7 @@ serve(async (req) => {
     const payload = await req.json()
     const body = JSON.stringify(payload)
 
-    // 2. 使用密钥验证 Webhook 签名的合法性
+    // 2. Verify Webhook signature validity using the secret
     const wh = new Webhook(CLERK_WEBHOOK_SECRET)
     const evt = wh.verify(body, {
       'svix-id': svix_id,
@@ -45,7 +45,7 @@ serve(async (req) => {
     const eventType = evt.type
     console.log(`Received webhook event: ${eventType} for user: ${id}`)
 
-    // 3. 根据事件类型执行数据库操作
+    // 3. Execute database operations based on event type
     switch (eventType) {
       case 'user.created': {
         const { id, first_name, last_name, image_url, email_addresses } = evt.data
@@ -70,7 +70,7 @@ serve(async (req) => {
             last_name,
             image_url,
             email: email_addresses[0]?.email_address,
-            updated_at: new Date().toISOString(), // 更新时间戳
+            updated_at: new Date().toISOString(), // Update timestamp
           })
           .eq('id', id)
         if (error) throw error
@@ -79,7 +79,7 @@ serve(async (req) => {
       }
 
       case 'user.deleted': {
-        // 对于删除事件，ID 可能在顶层
+        // For delete events, ID might be at the top level
         const deletedId = id
         if (!deletedId) {
           return new Response('Deleted user ID not found', { status: 400 })
