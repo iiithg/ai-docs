@@ -251,6 +251,40 @@
   color: #ff6b6b;
 }
 
+.score-submitted {
+  color: #4ecdc4;
+  font-size: 0.9rem;
+  margin-top: 8px;
+  animation: fade-in 0.3s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.login-prompt {
+  background: rgba(0, 0, 0, 0.7);
+  padding: 40px;
+  border-radius: 15px;
+  color: white;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  max-width: 400px;
+}
+
+.login-prompt h2 {
+  font-size: 1.8rem;
+  margin-bottom: 12px;
+  color: #4ecdc4;
+}
+
+.login-prompt p {
+  color: #aaa;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
 .game-info {
   background: rgba(255, 255, 255, 0.1);
   padding: 20px;

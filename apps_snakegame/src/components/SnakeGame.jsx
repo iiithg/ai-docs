@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import './SnakeGame.css';
 import SoundManager from '../utils/SoundManager';
+import { supabase } from '../supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 const BOARD_SIZE = 20;
 const INITIAL_SNAKE = [{ x: 10, y: 10 }];
@@ -18,39 +20,94 @@ const FOOD_TYPES = {
 };
 
 const SnakeGame = () => {
-  const [snake, setSnake] = useState(INITIAL_SNAKE);
-  const [direction, setDirection] = useState(INITIAL_DIRECTION);
-  const [foods, setFoods] = useState([]);
-  const [gameOver, setGameOver] = useState(false);
-  const [score, setScore] = useState(0);
-  const [gameStarted, setGameStarted] = useState(false);
-  const [gameSpeed, setGameSpeed] = useState(GAME_SPEED);
-  const [isGhostMode, setIsGhostMode] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [showMilestone, setShowMilestone] = useState(null);
+  const { user } = useAuth()
+  const [snake, setSnake] = useState(INITIAL_SNAKE)
+  const [direction, setDirection] = useState(INITIAL_DIRECTION)
+  const [foods, setFoods] = useState([])
+  const [gameOver, setGameOver] = useState(false)
+  const [score, setScore] = useState(0)
+  const [gameStarted, setGameStarted] = useState(false)
+  const [gameSpeed, setGameSpeed] = useState(GAME_SPEED)
+  const [isGhostMode, setIsGhostMode] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
+  const [showMilestone, setShowMilestone] = useState(null)
+  const [scoreSubmitted, setScoreSubmitted] = useState(false)
   
-  const gameLoopRef = useRef();
-  const lastUpdateTimeRef = useRef(0);
-  const previousScoreRef = useRef(0);
+  const gameLoopRef = useRef()
+  const lastUpdateTimeRef = useRef(0)
+  const previousScoreRef = useRef(0)
+  const gameStartTimeRef = useRef(0)
+  const lastUserIdRef = useRef(null)
+
+  // Reset scoreSubmitted when user changes
+  useEffect(() => {
+    if (user?.id !== lastUserIdRef.current) {
+      lastUserIdRef.current = user?.id
+      setScoreSubmitted(false)
+    }
+  }, [user])
+
+  // Submit score to leaderboard on game over
+  const submitScore = useCallback(async (finalScore, finalLength) => {
+    if (!user) {
+      console.log('No user logged in, skipping score submission')
+      return
+    }
+    if (finalScore === 0) {
+      console.log('Score is 0, skipping submission')
+      return
+    }
+    if (scoreSubmitted) {
+      console.log('Score already submitted for this session')
+      return
+    }
+
+    console.log('Submitting score:', { 
+      user_id: user.id, 
+      username: user.user_metadata?.username || user.email,
+      score: finalScore 
+    })
+
+    try {
+      const { error } = await supabase.from('leaderboard').insert({
+        user_id: user.id,
+        username: user.user_metadata?.username || user.email,
+        score: finalScore,
+        snake_length: finalLength,
+        game_duration: Math.floor((Date.now() - gameStartTimeRef.current) / 1000),
+      })
+
+      if (error) {
+        console.error('Error submitting score:', error)
+        alert('Failed to submit score: ' + error.message)
+      } else {
+        setScoreSubmitted(true)
+        console.log('Score submitted successfully!')
+      }
+    } catch (err) {
+      console.error('Error submitting score:', err)
+      alert('Error submitting score: ' + err.message)
+    }
+  }, [user, scoreSubmitted])
 
   // Listen for score changes, trigger effects
   useEffect(() => {
     if (score > 0 && score > previousScoreRef.current) {
-      const milestone = Math.floor(score / 100) * 100;
-      const prevMilestone = Math.floor(previousScoreRef.current / 100) * 100;
+      const milestone = Math.floor(score / 100) * 100
+      const prevMilestone = Math.floor(previousScoreRef.current / 100) * 100
 
       if (milestone > prevMilestone) {
         // Trigger confetti effect
-        triggerConfetti();
+        triggerConfetti()
         // Show milestone notification
-        setShowMilestone(milestone);
-        setTimeout(() => setShowMilestone(null), 3000);
+        setShowMilestone(milestone)
+        setTimeout(() => setShowMilestone(null), 3000)
         // Play special sound effect
-        SoundManager.play('goldenFood');
+        SoundManager.play('goldenFood')
       }
     }
-    previousScoreRef.current = score;
-  }, [score]);
+    previousScoreRef.current = score
+  }, [score])
 
   const triggerConfetti = () => {
     const duration = 3000;
@@ -138,68 +195,74 @@ const SnakeGame = () => {
   // Move snake
   const moveSnake = useCallback(() => {
     setSnake(currentSnake => {
-      const newSnake = [...currentSnake];
-      const head = { ...newSnake[0] };
+      const newSnake = [...currentSnake]
+      const head = { ...newSnake[0] }
 
-      head.x += direction.x;
-      head.y += direction.y;
+      head.x += direction.x
+      head.y += direction.y
 
       // Check boundary collision (ghost mode can pass through walls)
       if (!isGhostMode) {
         if (head.x < 0 || head.x >= BOARD_SIZE || head.y < 0 || head.y >= BOARD_SIZE) {
-          SoundManager.play('gameOver');
-          setGameOver(true);
-          return currentSnake;
+          SoundManager.play('gameOver')
+          setGameOver(true)
+          if (score > 0) {
+            submitScore(score, currentSnake.length)
+          }
+          return currentSnake
         }
       } else {
         // Ghost mode wall phasing
-        head.x = (head.x + BOARD_SIZE) % BOARD_SIZE;
-        head.y = (head.y + BOARD_SIZE) % BOARD_SIZE;
+        head.x = (head.x + BOARD_SIZE) % BOARD_SIZE
+        head.y = (head.y + BOARD_SIZE) % BOARD_SIZE
       }
 
       // Check self collision (ghost mode won't hit itself)
       if (!isGhostMode && newSnake.some(segment => segment.x === head.x && segment.y === head.y)) {
-        SoundManager.play('gameOver');
-        setGameOver(true);
-        return currentSnake;
+        SoundManager.play('gameOver')
+        setGameOver(true)
+        if (score > 0) {
+          submitScore(score, currentSnake.length)
+        }
+        return currentSnake
       }
 
-      newSnake.unshift(head);
+      newSnake.unshift(head)
 
       // Check if food is eaten
-      const eatenFood = foods.find(food => food.x === head.x && food.y === head.y);
+      const eatenFood = foods.find(food => food.x === head.x && food.y === head.y)
       if (eatenFood) {
-        setScore(prev => prev + eatenFood.points);
+        setScore(prev => prev + eatenFood.points)
 
         // Play sound effect
         if (eatenFood.type === 'golden') {
-          SoundManager.play('goldenFood');
+          SoundManager.play('goldenFood')
         } else if (eatenFood.effect === 'speed') {
-          SoundManager.play('speedBoost');
+          SoundManager.play('speedBoost')
         } else if (eatenFood.effect === 'ghost') {
-          SoundManager.play('ghostMode');
+          SoundManager.play('ghostMode')
         } else {
-          SoundManager.play('eat');
+          SoundManager.play('eat')
         }
 
         // Apply food effect
         if (eatenFood.effect) {
-          applyFoodEffect(eatenFood.effect, eatenFood.duration);
+          applyFoodEffect(eatenFood.effect, eatenFood.duration)
         }
 
         // Remove eaten food and generate new food
         setFoods(currentFoods => {
-          const filteredFoods = currentFoods.filter(f => f.id !== eatenFood.id);
-          const newFood = generateFood();
-          return [...filteredFoods, newFood];
-        });
+          const filteredFoods = currentFoods.filter(f => f.id !== eatenFood.id)
+          const newFood = generateFood()
+          return [...filteredFoods, newFood]
+        })
       } else {
-        newSnake.pop();
+        newSnake.pop()
       }
 
-      return newSnake;
-    });
-  }, [direction, isGhostMode, foods, generateFood, applyFoodEffect]);
+      return newSnake
+    })
+  }, [direction, isGhostMode, foods, generateFood, applyFoodEffect, score, submitScore])
 
   // Game loop
   const gameLoop = useCallback((currentTime) => {
@@ -247,19 +310,21 @@ const SnakeGame = () => {
 
   // Start game
   const startGame = () => {
-    setSnake(INITIAL_SNAKE);
-    setDirection(INITIAL_DIRECTION);
-    setGameOver(false);
-    setScore(0);
-    setGameStarted(true);
-    setGameSpeed(GAME_SPEED);
-    setIsGhostMode(false);
-  };
+    setSnake(INITIAL_SNAKE)
+    setDirection(INITIAL_DIRECTION)
+    setGameOver(false)
+    setScore(0)
+    setGameStarted(true)
+    setGameSpeed(GAME_SPEED)
+    setIsGhostMode(false)
+    setScoreSubmitted(false)
+    gameStartTimeRef.current = Date.now()
+  }
 
   // Restart game
   const restartGame = () => {
-    startGame();
-  };
+    startGame()
+  }
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyPress);
@@ -346,7 +411,12 @@ const SnakeGame = () => {
       </div>
 
       <div className="game-controls">
-        {!gameStarted ? (
+        {!user ? (
+          <div className="login-prompt">
+            <h2>Sign In to Play!</h2>
+            <p>Create an account to save your scores and compete on the leaderboard.</p>
+          </div>
+        ) : !gameStarted ? (
           <button onClick={startGame} className="start-btn">
             Start Game
           </button>
@@ -354,8 +424,11 @@ const SnakeGame = () => {
           <div className="game-over">
             <h2>Game Over!</h2>
             <p>Final Score: {score}</p>
+            {scoreSubmitted && (
+              <p className="score-submitted">Score submitted to leaderboard!</p>
+            )}
             <button onClick={restartGame} className="restart-btn">
-              Restart
+              Play Again
             </button>
           </div>
         ) : (
